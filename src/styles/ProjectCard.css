@@ -1,0 +1,136 @@
+
+.project-card {
+  background: #fff;
+  border: 1px solid #edecf3;
+  border-radius: 12px;
+  padding: 19px;
+  min-width: 0;
+}
+
+.project-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.project-category {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 6px 9px;
+  border-radius: 5px;
+}
+
+.project-category.purple {
+  background: #f0edff;
+  color: #795ee3;
+}
+
+.project-category.blue {
+  background: #e9f3ff;
+  color: #4c91e8;
+}
+
+.project-category.orange {
+  background: #fff1e6;
+  color: #e99a52;
+}
+
+.more-button {
+  border: 0;
+  background: transparent;
+  color: #9998aa;
+  font-size: 20px;
+}
+
+.project-card h3 {
+  font-size: 14px;
+  margin: 14px 0 7px;
+}
+
+.project-description {
+  font-size: 10px;
+  color: #9998aa;
+  line-height: 1.6;
+  min-height: 32px;
+}
+
+.progress-heading {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  margin: 17px 0 8px;
+}
+
+.progress-heading span {
+  color: #9291a2;
+}
+
+.progress-heading strong {
+  font-size: 11px;
+}
+
+.progress-track {
+  height: 6px;
+  background: #efedf5;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width .25s ease;
+}
+
+.progress-fill.purple {
+  background: #795ee3;
+}
+
+.progress-fill.blue {
+  background: #4c91e8;
+}
+
+.progress-fill.orange {
+  background: #e99a52;
+}
+
+.project-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  margin-top: 9px;
+  color: #9998aa;
+  font-size: 9px;
+}
+
+.task-list {
+  border-top: 1px solid #f0eff5;
+  margin-top: 16px;
+  padding-top: 11px;
+  display: grid;
+  gap: 12px;
+}
+
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: #69687a;
+  font-size: 10px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.task-row input {
+  accent-color: #765ee3;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.task-done {
+  color: #aaa9b7;
+  text-decoration: line-through;
+}
