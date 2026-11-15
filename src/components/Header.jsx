@@ -20,7 +20,7 @@ export default function Header({ active, setMobileOpen }) {
         <button className="notification" aria-label="Notifications">
           ♧
         </button>
-        <div className="avatar small-avatar">JD</div>
+        <div className="avatar small-avatar">IR</div>
       </div>
     </header>
   );

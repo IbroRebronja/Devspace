@@ -62,9 +62,9 @@ export default function Sidebar({
           </div>
 
           <div className="profile">
-            <div className="avatar">JD</div>
+            <div className="avatar">IR</div>
             <div>
-              <strong>Jordan Davis</strong>
+              <strong>Ibro Rebronja</strong>
               <small>Frontend Developer</small>
             </div>
             <span className="profile-menu">···</span>

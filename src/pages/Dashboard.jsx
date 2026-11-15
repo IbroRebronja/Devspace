@@ -66,7 +66,7 @@ export default function Dashboard() {
               </div>
 
               <h1>
-                Good evening, Jordan <span>✦</span>
+                Good evening, Ibro <span>✦</span>
               </h1>
 
               <p>
