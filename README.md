@@ -1,86 +1,79 @@
 # DevSpace Dashboard
 
-A responsive developer dashboard built with React, JavaScript, and CSS, powered by Vite.
+A simple developer dashboard built with React, JavaScript, and CSS. It uses Vite to run the project locally.
 
 ## Features
 
-- Responsive dashboard layout
+- Responsive layout
 - Sidebar navigation
-- Project overview cards
-- Task tracking with interactive checkboxes
-- Project completion progress
+- Project overview
+- Task tracking with checkboxes
+- Project progress tracking
 - Dashboard statistics
-- Mobile-friendly layout
+- Mobile-friendly design
 
-## Tech Stack
+## Built With
 
 - React
 - JavaScript
 - CSS
 - Vite
-- npm
 
-## Prerequisites
+## Requirements
 
-Before running the project, make sure you have installed:
+Make sure you have Node.js and npm installed.
 
-- [Node.js](https://nodejs.org/) (LTS version recommended)
-- npm (included with Node.js)
-- [Git](https://git-scm.com/) (optional, for version control)
-
-Check your installations:
+You can check by running:
 
 ```bash
 node -v
 npm -v
 ```
 
-## Getting Started
+If you don't have Node.js, download it from [nodejs.org](https://nodejs.org/).
 
-### 1. Clone the repository
+## Installation
+
+Clone the repository:
 
 ```bash
 git clone https://github.com/USERNAME/REPOSITORY.git
 ```
 
-Replace `USERNAME` and `REPOSITORY` with your GitHub username and repository name.
-
-### 2. Navigate into the project
+Go into the project folder:
 
 ```bash
 cd REPOSITORY
 ```
 
-### 3. Install dependencies
+Install the dependencies:
 
 ```bash
 npm install
 ```
 
-This installs the packages required by the application.
+## Run the Project
 
-### 4. Start the development server
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-Vite will display a local development URL, usually:
+Open the local URL shown in your terminal. By default, it is:
 
 ```text
 http://localhost:5173/
 ```
 
-Open this URL in your browser to view the dashboard.
-
 ## Available Commands
 
-| Command | Description |
+| Command | What it does |
 |---|---|
-| `npm install` | Install project dependencies |
-| `npm run dev` | Start the development server |
-| `npm run build` | Build the application for production |
-| `npm run preview` | Preview the production build |
+| `npm install` | Installs dependencies |
+| `npm run dev` | Starts the development server |
+| `npm run build` | Builds the project for production |
+| `npm run preview` | Previews the production build |
 
 ## Project Structure
 
@@ -115,32 +108,33 @@ devspace/
 └── README.md
 ```
 
-## Building for Production
+## Editing the Project
 
-To generate an optimized production build:
+Most of the dashboard code is inside the `src/` folder.
+
+- `components/` contains the reusable UI components.
+- `pages/` contains the dashboard page.
+- `data/projects.js` contains the project and task data.
+- `styles/` contains the CSS files.
+
+Changes are picked up automatically by Vite while the development server is running.
+
+## Production Build
+
+To create a production build, run:
 
 ```bash
 npm run build
 ```
 
-The generated files will be placed in the `dist/` directory.
+The output will be saved in the `dist/` folder.
 
-To preview the production build locally:
+To preview it locally:
 
 ```bash
 npm run preview
 ```
 
-## Development
-
-You can edit the React components and CSS files inside the `src/` directory. Vite automatically refreshes the browser when changes are saved.
-
-Project data and initial tasks can be modified in:
-
-```text
-src/data/projects.js
-```
-
 ## License
 
-This project is available for personal and educational use. Add a license file if you intend to distribute it under specific licensing terms.
+For personal and educational use.
