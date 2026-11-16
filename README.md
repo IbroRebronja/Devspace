@@ -1,6 +1,6 @@
 # DevSpace Dashboard
 
-A simple developer dashboard built with React, JavaScript, and CSS. It uses Vite to run the project locally.
+A simple developer dashboard built with React, JavaScript, and CSS. It uses Vite to run the project locally (NOT GITHUB PAGES).
 
 ## Features
 
