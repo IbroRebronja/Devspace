@@ -1,49 +1,53 @@
-# DevSpace Dashboard
+# DevSpace
 
-A simple developer dashboard built with React, JavaScript, and CSS. It uses Vite to run the project locally.
+A developer dashboard built with React, JavaScript, and CSS. DevSpace provides a workspace for managing projects, tracking tasks, monitoring progress, and keeping track of deadlines.
 
 ## Features
 
-- Responsive layout
-- Sidebar navigation
-- Project overview
-- Task tracking with checkboxes
+- Dashboard overview with live project and task statistics
+- Create, edit, and delete projects
+- Add, edit, delete, and complete tasks
 - Project progress tracking
-- Dashboard statistics
-- Mobile-friendly design
+- Task overview
+- Calendar page for project deadlines
+- Settings and support pages
+- Responsive sidebar navigation
+- Local storage for saving projects and tasks between sessions
+- Privacy, terms, cookies, and refunds pages
+- Cookie consent interface
 
 ## Built With
 
-- React
+- React 19
 - JavaScript
 - CSS
-- Vite
+- Vite 6
 
 ## Requirements
 
-Make sure you have Node.js and npm installed.
+Make sure Node.js and npm are installed.
 
-You can check by running:
+Check your versions:
 
 ```bash
 node -v
 npm -v
 ```
 
-If you don't have Node.js, download it from [nodejs.org](https://nodejs.org/).
+Download Node.js from [nodejs.org](https://nodejs.org/) if needed.
 
 ## Installation
 
 Clone the repository:
 
 ```bash
-git clone https://github.com/USERNAME/REPOSITORY.git
+git clone https://github.com/IbroRebronja/Devspace.git
 ```
 
-Go into the project folder:
+Move into the project folder:
 
 ```bash
-cd REPOSITORY
+cd Devspace
 ```
 
 Install the dependencies:
@@ -60,7 +64,7 @@ Start the development server:
 npm run dev
 ```
 
-Open the local URL shown in your terminal. By default, it is:
+Open the local URL shown in your terminal. By default:
 
 ```text
 http://localhost:5173/
@@ -68,38 +72,57 @@ http://localhost:5173/
 
 ## Available Commands
 
-| Command | What it does |
+| Command | Description |
 |---|---|
-| `npm install` | Installs dependencies |
+| `npm install` | Installs project dependencies |
 | `npm run dev` | Starts the development server |
-| `npm run build` | Builds the project for production |
+| `npm run build` | Creates a production build |
 | `npm run preview` | Previews the production build |
 
 ## Project Structure
 
 ```text
-devspace/
+Devspace/
+│
 ├── public/
+│
 ├── src/
+│   │
 │   ├── assets/
 │   │   └── images/
+│   │
 │   ├── components/
+│   │   ├── CookieConsent.jsx
 │   │   ├── Header.jsx
 │   │   ├── ProjectCard.jsx
+│   │   ├── ProjectForm.jsx
 │   │   ├── Sidebar.jsx
-│   │   └── StatCard.jsx
+│   │   ├── StatCard.jsx
+│   │   └── TaskForm.jsx
+│   │
 │   ├── data/
 │   │   └── projects.js
+│   │
 │   ├── pages/
-│   │   └── Dashboard.jsx
+│   │   ├── Calendar.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── LegalPage.jsx
+│   │   ├── Projects.jsx
+│   │   ├── Settings.jsx
+│   │   ├── Support.jsx
+│   │   └── Tasks.jsx
+│   │
 │   ├── styles/
 │   │   ├── Dashboard.css
-│   │   ├── global.css
+│   │   ├── LegalPage.css
 │   │   ├── ProjectCard.css
-│   │   └── Sidebar.css
+│   │   ├── Sidebar.css
+│   │   └── WorkspacePages.css
+│   │
 │   ├── App.jsx
 │   ├── index.css
 │   └── main.jsx
+│
 ├── .gitignore
 ├── index.html
 ├── package.json
@@ -108,28 +131,61 @@ devspace/
 └── README.md
 ```
 
-## Editing the Project
+## Folder Guide
 
-Most of the dashboard code is inside the `src/` folder.
+### `src/components/`
 
-- `components/` contains the reusable UI components.
-- `pages/` contains the dashboard page.
-- `data/projects.js` contains the project and task data.
-- `styles/` contains the CSS files.
+Contains reusable interface components.
 
-Changes are picked up automatically by Vite while the development server is running.
+- `Header.jsx`: Dashboard header.
+- `Sidebar.jsx`: Main navigation.
+- `StatCard.jsx`: Dashboard statistics cards.
+- `ProjectCard.jsx`: Displays individual projects and their tasks.
+- `ProjectForm.jsx`: Form for creating and editing projects.
+- `TaskForm.jsx`: Form for adding and editing tasks.
+- `CookieConsent.jsx`: Cookie consent interface.
+
+### `src/pages/`
+
+Contains the main application pages.
+
+- `Dashboard.jsx`: Main application layout, navigation, project state, and shared functionality.
+- `Projects.jsx`: Project management page.
+- `Tasks.jsx`: Overview of all tasks.
+- `Calendar.jsx`: Project deadlines.
+- `Settings.jsx`: Application settings.
+- `Support.jsx`: Help and support.
+- `LegalPage.jsx`: Privacy, terms, cookies, and refunds information.
+
+### `src/data/`
+
+Contains the initial application data.
+
+- `projects.js`: Initial projects and their tasks.
+
+### `src/styles/`
+
+Contains CSS files for the dashboard, components, navigation, and workspace pages.
+
+## Data Storage
+
+Projects and tasks are currently stored in the browser using `localStorage`.
+
+This means data remains available after refreshing the page in the same browser, but it is not synchronised between different devices or users.
+
+There is currently no backend database or user authentication system.
 
 ## Production Build
 
-To create a production build, run:
+Create a production build:
 
 ```bash
 npm run build
 ```
 
-The output will be saved in the `dist/` folder.
+The generated files are saved in the `dist/` folder.
 
-To preview it locally:
+Preview the production build locally:
 
 ```bash
 npm run preview
