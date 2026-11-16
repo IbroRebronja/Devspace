@@ -19,8 +19,10 @@ export default function Sidebar({
   return (
     <>
       {mobileOpen && (
-        <div
+        <button
+          type="button"
           className="sidebar-overlay"
+          aria-label="Close navigation"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -33,19 +35,21 @@ export default function Sidebar({
 
         <div className="nav-label">WORKSPACE</div>
 
-        <nav>
+        <nav aria-label="Main navigation">
           {links.map(([icon, label]) => (
             <button
               key={label}
+              type="button"
               className={`nav-link ${
                 active === label ? "active" : ""
               }`}
+              aria-current={active === label ? "page" : undefined}
               onClick={() => {
                 setActive(label);
                 setMobileOpen(false);
               }}
             >
-              <span>{icon}</span>
+              <span aria-hidden="true">{icon}</span>
               {label}
             </button>
           ))}
@@ -56,7 +60,10 @@ export default function Sidebar({
             <div className="help-icon">?</div>
             <strong>Need help?</strong>
             <p>Visit our help center for support.</p>
-            <button onClick={() => setActive("Help Center")}>
+            <button
+              type="button"
+              onClick={() => setActive("Help Center")}
+            >
               Get support →
             </button>
           </div>

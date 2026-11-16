@@ -233,14 +233,18 @@ export default function Dashboard() {
             </div>
           </section>
 
-          <footer>
-            <span>© 2026 DevSpace</span>
 
-            <span>
-              Built for focused work.{" "}
-              <span className="footer-heart">♥</span>
-            </span>
-          </footer>
+<footer className="site-footer">
+  <span>© 2026 DevSpace</span>
+
+  <nav aria-label="Legal information">
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
+    <a href="/cookies">Cookies</a>
+    <a href="/refunds">Refunds</a>
+  </nav>
+</footer>
+
 
         </div>
       </main>
