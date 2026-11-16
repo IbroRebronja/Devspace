@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import "../styles/Sidebar.css";
 
 export default function Sidebar({
@@ -8,6 +8,8 @@ export default function Sidebar({
   mobileOpen,
   setMobileOpen,
 }) {
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
   const links = [
     ["⌂", "Overview"],
     ["▦", "My Projects"],
@@ -15,6 +17,12 @@ export default function Sidebar({
     ["◷", "Calendar"],
     ["⚙", "Settings"],
   ];
+
+  function navigate(page) {
+    setActive(page);
+    setMobileOpen(false);
+    setProfileMenuOpen(false);
+  }
 
   return (
     <>
@@ -40,14 +48,9 @@ export default function Sidebar({
             <button
               key={label}
               type="button"
-              className={`nav-link ${
-                active === label ? "active" : ""
-              }`}
+              className={`nav-link ${active === label ? "active" : ""}`}
               aria-current={active === label ? "page" : undefined}
-              onClick={() => {
-                setActive(label);
-                setMobileOpen(false);
-              }}
+              onClick={() => navigate(label)}
             >
               <span aria-hidden="true">{icon}</span>
               {label}
@@ -60,21 +63,39 @@ export default function Sidebar({
             <div className="help-icon">?</div>
             <strong>Need help?</strong>
             <p>Visit our help center for support.</p>
-            <button
-              type="button"
-              onClick={() => setActive("Help Center")}
-            >
+            <button type="button" onClick={() => navigate("Help Center")}>
               Get support →
             </button>
           </div>
 
           <div className="profile">
             <div className="avatar">IR</div>
-            <div>
+
+            <div className="profile-details">
               <strong>Ibro Rebronja</strong>
               <small>Frontend Developer</small>
             </div>
-            <span className="profile-menu">···</span>
+
+            <button
+              type="button"
+              className="profile-menu"
+              aria-label="Open profile menu"
+              aria-expanded={profileMenuOpen}
+              onClick={() => setProfileMenuOpen(open => !open)}
+            >
+              ···
+            </button>
+
+            {profileMenuOpen && (
+              <div className="profile-dropdown">
+                <button type="button" onClick={() => navigate("Settings")}>
+                  Profile and settings
+                </button>
+                <button type="button" onClick={() => navigate("Help Center")}>
+                  Get support
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </aside>

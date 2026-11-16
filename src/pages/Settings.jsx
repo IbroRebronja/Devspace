@@ -1,4 +1,3 @@
-import DataControls from "../components/DataControls";
 import React from "react";
 import DataControls from "../components/DataControls";
 import "../styles/WorkspacePages.css";
