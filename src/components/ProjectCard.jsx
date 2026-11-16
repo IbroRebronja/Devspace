@@ -1,14 +1,37 @@
 
-import React from "react";
+import React, { useState } from "react";
+import TaskForm from "./TaskForm";
 import "../styles/ProjectCard.css";
 
-export default function ProjectCard({ project, onToggle }) {
-  const completed = project.tasks.filter(
-    task => task.done
-  ).length;
+export default function ProjectCard({
+  project,
+  onToggle,
+  onEdit,
+  onDelete,
+  onAddTask,
+  onEditTask,
+  onDeleteTask,
+}) {
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
 
-  const total = project.tasks.length;
-  const progress = Math.round((completed / total) * 100);
+  const tasks = project.tasks || [];
+  const completed = tasks.filter(task => task.done).length;
+  const total = tasks.length;
+  const progress = total
+    ? Math.round((completed / total) * 100)
+    : 0;
+
+  function saveTask(task) {
+    if (editingTask) {
+      onEditTask(project.id, task);
+    } else {
+      onAddTask(project.id, task);
+    }
+
+    setShowTaskForm(false);
+    setEditingTask(null);
+  }
 
   return (
     <article className="project-card">
@@ -17,9 +40,18 @@ export default function ProjectCard({ project, onToggle }) {
           {project.category}
         </span>
 
-        <button className="more-button" aria-label="More options">
-          ···
-        </button>
+        <div className="project-actions">
+          <button type="button" onClick={() => onEdit(project)}>
+            Edit
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onDelete(project.id)}
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       <h3>{project.name}</h3>
@@ -41,15 +73,17 @@ export default function ProjectCard({ project, onToggle }) {
       </div>
 
       <div className="project-footer">
+        <span>{completed}/{total} tasks completed</span>
         <span>
-          {completed}/{total} tasks completed
+          {project.dueDate
+            ? `Due ${project.dueDate}`
+            : "No due date"}
         </span>
-        <span>Due {project.dueDate}</span>
       </div>
 
       <div className="task-list">
-        {project.tasks.map(task => (
-          <label className="task-row" key={task.id}>
+        {tasks.map(task => (
+          <div className="task-row" key={task.id}>
             <input
               type="checkbox"
               checked={task.done}
@@ -59,9 +93,51 @@ export default function ProjectCard({ project, onToggle }) {
             <span className={task.done ? "task-done" : ""}>
               {task.title}
             </span>
-          </label>
+
+            <div className="task-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingTask(task);
+                  setShowTaskForm(true);
+                }}
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onDeleteTask(project.id, task.id)}
+              >
+                ×
+              </button>
+            </div>
+          </div>
         ))}
+
+        {tasks.length === 0 && (
+          <p className="project-no-tasks">No tasks added yet.</p>
+        )}
       </div>
+
+      {showTaskForm ? (
+        <TaskForm
+          task={editingTask}
+          onSave={saveTask}
+          onCancel={() => {
+            setShowTaskForm(false);
+            setEditingTask(null);
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          className="add-task-button"
+          onClick={() => setShowTaskForm(true)}
+        >
+          + Add task
+        </button>
+      )}
     </article>
   );
 }

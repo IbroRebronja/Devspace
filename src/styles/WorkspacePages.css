@@ -186,3 +186,205 @@
     align-items: flex-start;
   }
 }
+
+
+/* Project management */
+
+.project-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(25, 22, 42, 0.48);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.project-modal {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 26px;
+  box-shadow: 0 20px 70px rgba(20, 15, 40, 0.2);
+}
+
+.project-modal-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.project-modal-heading h2 {
+  font-size: 20px;
+  margin: 8px 0 0;
+  color: #363448;
+}
+
+.project-modal-close {
+  border: 0;
+  background: #f3f1f8;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  font-size: 21px;
+  cursor: pointer;
+  color: #777487;
+}
+
+.project-modal form {
+  display: grid;
+  gap: 17px;
+}
+
+.project-modal form label {
+  display: grid;
+  gap: 7px;
+  color: #555367;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.project-modal input,
+.project-modal textarea,
+.project-modal select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #e6e4ed;
+  border-radius: 8px;
+  padding: 11px 12px;
+  background: #fff;
+  color: #363448;
+  font: inherit;
+  font-size: 13px;
+}
+
+.project-modal textarea {
+  resize: vertical;
+}
+
+.project-modal input:focus,
+.project-modal textarea:focus,
+.project-modal select:focus {
+  outline: 2px solid #765ee344;
+  border-color: #765ee3;
+}
+
+.project-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+}
+
+.project-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.secondary-button {
+  border: 1px solid #e6e4ed;
+  background: #fff;
+  color: #666477;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.project-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.project-actions button {
+  border: 1px solid #e9e7f0;
+  background: #fff;
+  color: #777487;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.project-actions button:hover,
+.secondary-button:hover {
+  background: #f5f3fc;
+  color: #7159df;
+}
+
+.project-no-tasks {
+  color: #9998aa;
+  font-size: 11px;
+  margin: 0;
+}
+
+@media (max-width: 520px) {
+  .project-modal {
+    padding: 20px;
+  }
+
+  .project-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.task-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.task-form input {
+  flex: 1;
+  min-width: 100px;
+  padding: 9px;
+  border: 1px solid #e6e4ed;
+  border-radius: 7px;
+  font-size: 11px;
+}
+
+.task-form button {
+  padding: 8px 10px;
+  font-size: 10px;
+}
+
+.add-task-button {
+  width: 100%;
+  margin-top: 13px;
+  padding: 10px;
+  border: 1px dashed #d8d3eb;
+  border-radius: 7px;
+  background: #faf9ff;
+  color: #765ee3;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-task-button:hover {
+  background: #f0edff;
+}
+
+.task-actions {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.task-actions button {
+  border: 0;
+  background: transparent;
+  color: #888798;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.task-actions button:hover {
+  color: #765ee3;
+}

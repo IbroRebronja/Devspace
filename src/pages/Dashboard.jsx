@@ -11,10 +11,13 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import StatCard from "../components/StatCard";
 import ProjectCard from "../components/ProjectCard";
+import ProjectForm from "../components/ProjectForm";
 
 import { initialProjects } from "../data/projects";
 
 import "../styles/Dashboard.css";
+
+const STORAGE_KEY = "devspace-projects-v1";
 
 const routeToPage = {
   "/": "Overview",
@@ -34,12 +37,42 @@ const pageToRoute = {
   "Help Center": "/support",
 };
 
+function loadProjects() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.error("Could not load saved projects:", error);
+  }
+
+  return initialProjects;
+}
+
 export default function Dashboard() {
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState(loadProjects);
+
   const [active, setActiveState] = useState(
     routeToPage[window.location.pathname] || "Overview"
   );
+
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [projectFormOpen, setProjectFormOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+    } catch (error) {
+      console.error("Could not save projects:", error);
+    }
+  }, [projects]);
 
   useEffect(() => {
     function handlePopState() {
@@ -58,6 +91,7 @@ export default function Dashboard() {
 
   function setActive(page) {
     const path = pageToRoute[page] || "/";
+
     setActiveState(page);
     setMobileOpen(false);
 
@@ -66,8 +100,7 @@ export default function Dashboard() {
     }
   }
 
-  const allTasks = projects.flatMap(project => project.tasks);
-
+  const allTasks = projects.flatMap(project => project.tasks || []);
   const completed = allTasks.filter(task => task.done).length;
   const total = allTasks.length;
 
@@ -81,10 +114,96 @@ export default function Dashboard() {
         project.id === projectId
           ? {
               ...project,
-              tasks: project.tasks.map(task =>
+              tasks: (project.tasks || []).map(task =>
                 task.id === taskId
                   ? { ...task, done: !task.done }
                   : task
+              ),
+            }
+          : project
+      )
+    );
+  }
+
+  function openNewProjectForm() {
+    setEditingProject(null);
+    setProjectFormOpen(true);
+  }
+
+  function openEditProjectForm(project) {
+    setEditingProject(project);
+    setProjectFormOpen(true);
+  }
+
+  function saveProject(projectData) {
+    setProjects(current => {
+      const exists = current.some(
+        project => project.id === projectData.id
+      );
+
+      if (exists) {
+        return current.map(project =>
+          project.id === projectData.id
+            ? projectData
+            : project
+        );
+      }
+
+      return [...current, projectData];
+    });
+
+    setProjectFormOpen(false);
+    setEditingProject(null);
+  }
+
+  function deleteProject(projectId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this project? Its tasks will also be deleted."
+    );
+
+    if (!confirmed) return;
+
+    setProjects(current =>
+      current.filter(project => project.id !== projectId)
+    );
+  }
+
+  function addTask(projectId, task) {
+    setProjects(current =>
+      current.map(project =>
+        project.id === projectId
+          ? {
+              ...project,
+              tasks: [...(project.tasks || []), task],
+            }
+          : project
+      )
+    );
+  }
+
+  function editTask(projectId, updatedTask) {
+    setProjects(current =>
+      current.map(project =>
+        project.id === projectId
+          ? {
+              ...project,
+              tasks: (project.tasks || []).map(task =>
+                task.id === updatedTask.id ? updatedTask : task
+              ),
+            }
+          : project
+      )
+    );
+  }
+
+  function deleteTask(projectId, taskId) {
+    setProjects(current =>
+      current.map(project =>
+        project.id === projectId
+          ? {
+              ...project,
+              tasks: (project.tasks || []).filter(
+                task => task.id !== taskId
               ),
             }
           : project
@@ -116,7 +235,7 @@ export default function Dashboard() {
               <section className="welcome">
                 <div>
                   <div className="eyebrow">
-                    SUNDAY, NOVEMBER 15, 2026
+                    MONDAY, NOVEMBER 16, 2026
                   </div>
 
                   <h1>
@@ -266,9 +385,13 @@ export default function Dashboard() {
                     </p>
                   </div>
 
-                  <span className="project-count">
-                    {projects.length} Projects
-                  </span>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={openNewProjectForm}
+                  >
+                    + Add project
+                  </button>
                 </div>
 
                 <div className="projects-grid">
@@ -277,6 +400,11 @@ export default function Dashboard() {
                       key={project.id}
                       project={project}
                       onToggle={toggleTask}
+                      onEdit={openEditProjectForm}
+                      onDelete={deleteProject}
+                      onAddTask={addTask}
+                      onEditTask={editTask}
+                      onDeleteTask={deleteTask}
                     />
                   ))}
                 </div>
@@ -289,6 +417,12 @@ export default function Dashboard() {
             <Projects
               projects={projects}
               onToggle={toggleTask}
+              onAdd={openNewProjectForm}
+              onEdit={openEditProjectForm}
+              onDelete={deleteProject}
+              onAddTask={addTask}
+              onEditTask={editTask}
+              onDeleteTask={deleteTask}
             />
           )}
 
@@ -324,6 +458,17 @@ export default function Dashboard() {
 
         </div>
       </main>
+
+      {projectFormOpen && (
+        <ProjectForm
+          project={editingProject}
+          onSave={saveProject}
+          onCancel={() => {
+            setProjectFormOpen(false);
+            setEditingProject(null);
+          }}
+        />
+      )}
     </div>
   );
 }
