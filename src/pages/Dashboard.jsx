@@ -13,11 +13,12 @@ import StatCard from "../components/StatCard";
 import ProjectCard from "../components/ProjectCard";
 import ProjectForm from "../components/ProjectForm";
 
-import { initialProjects } from "../data/projects";
+import {
+  projectsAPI,
+  tasksAPI,
+} from "../services/api";
 
 import "../styles/Dashboard.css";
-
-const STORAGE_KEY = "devspace-projects-v1";
 
 const routeToPage = {
   "/": "Overview",
@@ -37,26 +38,10 @@ const pageToRoute = {
   "Help Center": "/support",
 };
 
-function loadProjects() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (saved) {
-      const parsed = JSON.parse(saved);
-
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    }
-  } catch (error) {
-    console.error("Could not load saved projects:", error);
-  }
-
-  return initialProjects;
-}
-
-export default function Dashboard() {
-  const [projects, setProjects] = useState(loadProjects);
+export default function Dashboard({ user, onLogout }) {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [active, setActiveState] = useState(
     routeToPage[window.location.pathname] || "Overview"
@@ -66,14 +51,24 @@ export default function Dashboard() {
   const [editingProject, setEditingProject] = useState(null);
   const [projectFormOpen, setProjectFormOpen] = useState(false);
 
+  // Load this user's projects from PostgreSQL.
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-    } catch (error) {
-      console.error("Could not save projects:", error);
+    async function loadProjects() {
+      try {
+        setError("");
+        const result = await projectsAPI.getAll();
+        setProjects(result.projects || []);
+      } catch (err) {
+        setError(err.message || "Could not load your projects.");
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [projects]);
 
+    loadProjects();
+  }, []);
+
+  // Handle browser back and forward navigation.
   useEffect(() => {
     function handlePopState() {
       setActiveState(
@@ -108,21 +103,39 @@ export default function Dashboard() {
     ? Math.round((completed / total) * 100)
     : 0;
 
-  function toggleTask(projectId, taskId) {
-    setProjects(current =>
-      current.map(project =>
-        project.id === projectId
-          ? {
-              ...project,
-              tasks: (project.tasks || []).map(task =>
-                task.id === taskId
-                  ? { ...task, done: !task.done }
-                  : task
-              ),
-            }
-          : project
-      )
-    );
+  function showError(message) {
+    setError(message || "Something went wrong. Please try again.");
+  }
+
+  // Toggle a task and save the change to PostgreSQL.
+  async function toggleTask(projectId, taskId) {
+    const project = projects.find(item => item.id === projectId);
+    const task = project?.tasks?.find(item => item.id === taskId);
+
+    if (!task) return;
+
+    try {
+      setError("");
+
+      const result = await tasksAPI.update(taskId, {
+        done: !task.done,
+      });
+
+      setProjects(current =>
+        current.map(item =>
+          item.id === projectId
+            ? {
+                ...item,
+                tasks: item.tasks.map(existing =>
+                  existing.id === taskId ? result.task : existing
+                ),
+              }
+            : item
+        )
+      );
+    } catch (err) {
+      showError(err.message);
+    }
   }
 
   function openNewProjectForm() {
@@ -135,79 +148,153 @@ export default function Dashboard() {
     setProjectFormOpen(true);
   }
 
-  function saveProject(projectData) {
-    setProjects(current => {
-      const exists = current.some(
-        project => project.id === projectData.id
-      );
+  // Create or update a project in PostgreSQL.
+  async function saveProject(projectData) {
+    try {
+      setError("");
 
-      if (exists) {
-        return current.map(project =>
-          project.id === projectData.id
-            ? projectData
-            : project
+      let result;
+
+      if (editingProject) {
+        result = await projectsAPI.update(
+          editingProject.id,
+          projectData
         );
+
+        setProjects(current =>
+          current.map(project =>
+            project.id === editingProject.id
+              ? result.project
+              : project
+          )
+        );
+      } else {
+        result = await projectsAPI.create(projectData);
+        setProjects(current => [...current, result.project]);
       }
 
-      return [...current, projectData];
-    });
-
-    setProjectFormOpen(false);
-    setEditingProject(null);
+      setProjectFormOpen(false);
+      setEditingProject(null);
+    } catch (err) {
+      showError(err.message);
+    }
   }
 
-  function deleteProject(projectId) {
+  // Delete a project and its associated tasks.
+  async function deleteProject(projectId) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this project? Its tasks will also be deleted."
     );
 
     if (!confirmed) return;
 
-    setProjects(current =>
-      current.filter(project => project.id !== projectId)
-    );
+    try {
+      setError("");
+      await projectsAPI.delete(projectId);
+
+      setProjects(current =>
+        current.filter(project => project.id !== projectId)
+      );
+    } catch (err) {
+      showError(err.message);
+    }
   }
 
-  function addTask(projectId, task) {
-    setProjects(current =>
-      current.map(project =>
-        project.id === projectId
-          ? {
-              ...project,
-              tasks: [...(project.tasks || []), task],
-            }
-          : project
-      )
-    );
+  // Create a task inside a project.
+  async function addTask(projectId, task) {
+    try {
+      setError("");
+
+      const result = await tasksAPI.create(projectId, {
+        title: task.title,
+        done: task.done,
+      });
+
+      setProjects(current =>
+        current.map(project =>
+          project.id === projectId
+            ? {
+                ...project,
+                tasks: [...(project.tasks || []), result.task],
+              }
+            : project
+        )
+      );
+    } catch (err) {
+      showError(err.message);
+    }
   }
 
-  function editTask(projectId, updatedTask) {
-    setProjects(current =>
-      current.map(project =>
-        project.id === projectId
-          ? {
-              ...project,
-              tasks: (project.tasks || []).map(task =>
-                task.id === updatedTask.id ? updatedTask : task
-              ),
-            }
-          : project
-      )
-    );
+  // Update an existing task.
+  async function editTask(projectId, updatedTask) {
+    try {
+      setError("");
+
+      const result = await tasksAPI.update(updatedTask.id, {
+        title: updatedTask.title,
+        done: updatedTask.done,
+      });
+
+      setProjects(current =>
+        current.map(project =>
+          project.id === projectId
+            ? {
+                ...project,
+                tasks: project.tasks.map(task =>
+                  task.id === updatedTask.id ? result.task : task
+                ),
+              }
+            : project
+        )
+      );
+    } catch (err) {
+      showError(err.message);
+    }
   }
 
-  function deleteTask(projectId, taskId) {
-    setProjects(current =>
-      current.map(project =>
-        project.id === projectId
-          ? {
-              ...project,
-              tasks: (project.tasks || []).filter(
-                task => task.id !== taskId
-              ),
-            }
-          : project
-      )
+  // Delete a task.
+  async function deleteTask(projectId, taskId) {
+    try {
+      setError("");
+      await tasksAPI.delete(taskId);
+
+      setProjects(current =>
+        current.map(project =>
+          project.id === projectId
+            ? {
+                ...project,
+                tasks: project.tasks.filter(task => task.id !== taskId),
+              }
+            : project
+        )
+      );
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  const today = new Date();
+
+  const formattedDate = today.toLocaleDateString("en", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).toUpperCase();
+
+  const firstName = user?.name?.trim().split(/\s+/)[0] || "there";
+
+  const hour = today.getHours();
+  const greeting =
+    hour < 12 ? "Good morning" :
+    hour < 18 ? "Good afternoon" :
+    "Good evening";
+
+  if (loading) {
+    return (
+      <div className="dashboard-loading">
+        Loading your workspace...
+      </div>
     );
   }
 
@@ -225,9 +312,39 @@ export default function Dashboard() {
           active={active}
           setMobileOpen={setMobileOpen}
           mobileOpen={mobileOpen}
+          user={user}
+          onLogout={onLogout}
         />
 
         <div className="dashboard-content">
+
+          {error && (
+            <div
+              role="alert"
+              style={{
+                padding: "12px 16px",
+                marginBottom: "20px",
+                borderRadius: "8px",
+                background: "#3a2025",
+                color: "#ffb8c0",
+              }}
+            >
+              {error}
+              <button
+                type="button"
+                onClick={() => setError("")}
+                style={{
+                  float: "right",
+                  background: "none",
+                  border: "none",
+                  color: "inherit",
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+            </div>
+          )}
 
           {/* OVERVIEW */}
           {active === "Overview" && (
@@ -235,11 +352,11 @@ export default function Dashboard() {
               <section className="welcome">
                 <div>
                   <div className="eyebrow">
-                    MONDAY, NOVEMBER 16, 2026
+                    {formattedDate}
                   </div>
 
                   <h1>
-                    Good evening, Ibro <span>✦</span>
+                    {greeting}, {firstName} <span>✦</span>
                   </h1>
 
                   <p>
@@ -408,6 +525,10 @@ export default function Dashboard() {
                     />
                   ))}
                 </div>
+
+                {projects.length === 0 && (
+                  <p>You haven't created any projects yet.</p>
+                )}
               </section>
             </>
           )}
@@ -455,7 +576,6 @@ export default function Dashboard() {
               <a href="/refunds">Refunds</a>
             </nav>
           </footer>
-
         </div>
       </main>
 

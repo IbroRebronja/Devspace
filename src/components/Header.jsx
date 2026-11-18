@@ -1,10 +1,23 @@
+
 import React from "react";
 
 export default function Header({
   active,
   setMobileOpen,
   mobileOpen,
+  user,
+  onLogout,
 }) {
+  const initials = user?.name
+    ? user.name
+        .trim()
+        .split(/\s+/)
+        .map(part => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "U";
+
   return (
     <header className="topbar">
       <button
@@ -22,15 +35,29 @@ export default function Header({
       </div>
 
       <div className="topbar-right">
-        <button
-          className="notification"
-          type="button"
-          aria-label="Notifications"
+        <div
+          className="avatar small-avatar"
+          title={user?.name || "User"}
         >
-          ♧
-        </button>
+          {initials}
+        </div>
 
-        <div className="avatar small-avatar">IR</div>
+        <button
+          type="button"
+          onClick={onLogout}
+          title="Sign out of DevSpace"
+          style={{
+            background: "transparent",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: "8px",
+            padding: "8px 12px",
+            color: "inherit",
+            cursor: "pointer",
+            fontSize: "13px",
+          }}
+        >
+          Sign out
+        </button>
       </div>
     </header>
   );
