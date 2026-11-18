@@ -1,4 +1,3 @@
-
 {
   "name": "devspace",
   "private": true,
@@ -10,11 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "pg": "^8.23.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "prisma": "^7.10.1",
     "vite": "^6.0.0"
   }
 }
