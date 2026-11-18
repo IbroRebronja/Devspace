@@ -1,0 +1,201 @@
+
+import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import prisma from "../prisma.js";
+import { authenticateToken } from "../middleware/auth.js";
+
+const router = express.Router();
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/",
+};
+
+function createToken(userId) {
+  return jwt.sign(
+    { sub: userId },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+}
+
+function publicUser(user) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  };
+}
+
+// REGISTER
+router.post("/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (
+      typeof name !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string"
+    ) {
+      return res.status(400).json({
+        message: "Name, email and password are required.",
+      });
+    }
+
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanName || cleanName.length > 100) {
+      return res.status(400).json({
+        message: "Please enter a valid name.",
+      });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return res.status(400).json({
+        message: "Please enter a valid email address.",
+      });
+    }
+
+    if (password.length < 8 || password.length > 72) {
+      return res.status(400).json({
+        message: "Password must be between 8 and 72 characters.",
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const user = await prisma.user.create({
+      data: {
+        name: cleanName,
+        email: cleanEmail,
+        passwordHash,
+      },
+    });
+
+    const token = createToken(user.id);
+
+    res.cookie("token", token, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(201).json({
+      message: "Account created successfully.",
+      user: publicUser(user),
+    });
+  } catch (error) {
+    if (error.code === "P2002") {
+      return res.status(409).json({
+        message: "An account with this email already exists.",
+      });
+    }
+
+    console.error("Registration error:", error);
+
+    return res.status(500).json({
+      message: "Could not create your account.",
+    });
+  }
+});
+
+// LOGIN
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string"
+    ) {
+      return res.status(400).json({
+        message: "Email and password are required.",
+      });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    const user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        message: "Invalid email or password.",
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      password,
+      user.passwordHash
+    );
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        message: "Invalid email or password.",
+      });
+    }
+
+    const token = createToken(user.id);
+
+    res.cookie("token", token, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({
+      message: "Logged in successfully.",
+      user: publicUser(user),
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+
+    return res.status(500).json({
+      message: "Could not log in.",
+    });
+  }
+});
+
+// LOGOUT
+router.post("/logout", (req, res) => {
+  res.clearCookie("token", cookieOptions);
+
+  return res.json({
+    message: "Logged out successfully.",
+  });
+});
+
+// CURRENT USER
+router.get("/me", authenticateToken, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      res.clearCookie("token", cookieOptions);
+
+      return res.status(401).json({
+        message: "User account not found.",
+      });
+    }
+
+    return res.json({ user });
+  } catch (error) {
+    console.error("User lookup error:", error);
+
+    return res.status(500).json({
+      message: "Could not retrieve user.",
+    });
+  }
+});
+
+export default router;
