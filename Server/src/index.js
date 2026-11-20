@@ -11,10 +11,11 @@ import tasksRouter from "./routes/tasks.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: CLIENT_URL,
   credentials: true,
 }));
 
@@ -48,6 +49,12 @@ app.use((err, req, res, next) => {
     });
   }
 
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({
+      message: "Request body is too large.",
+    });
+  }
+
   res.status(500).json({
     message: "An unexpected server error occurred.",
   });
@@ -65,6 +72,7 @@ process.on("unhandledRejection", (error) => {
 
 process.on("uncaughtException", (error) => {
   console.error("Uncaught exception:", error);
+
   server.close(() => {
     process.exit(1);
   });
