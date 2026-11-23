@@ -1,0 +1,15 @@
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devspace-api-container
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: production
+      PORT: 5000
