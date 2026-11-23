@@ -1,0 +1,9 @@
+
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://devspace-api-p1iu.onrender.com/api/:path*"
+    }
+  ]
+}
