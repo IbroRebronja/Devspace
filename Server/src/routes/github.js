@@ -1,4 +1,3 @@
-
 import express from "express";
 import {
   createHash,
@@ -110,6 +109,7 @@ router.get("/callback", authenticateToken, async (req, res) => {
     !safeCompare(state, savedState) ||
     !verifier
   ) {
+    console.error("GitHub callback rejected: missing or invalid OAuth state.");
     return res.redirect(
       `${CLIENT_URL}/settings?github=error`
     );
@@ -123,14 +123,14 @@ router.get("/callback", authenticateToken, async (req, res) => {
       throw new Error("GitHub integration is not configured.");
     }
 
-    // Exchange authorization code for an access token
+    // Exchange authorization code for an access token.
     const tokenResponse = await fetch(
       "https://github.com/login/oauth/access_token",
       {
         method: "POST",
         headers: {
           Accept: "application/json",
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
           client_id: clientId,
@@ -143,17 +143,38 @@ router.get("/callback", authenticateToken, async (req, res) => {
     );
 
     const tokenResponseText = await tokenResponse.text();
+    let tokenData;
 
-    console.log("GitHub token exchange status:", tokenResponse.status);
-    console.log("GitHub token exchange response:", tokenResponseText);
+    try {
+      tokenData = JSON.parse(tokenResponseText);
+    } catch {
+      console.error("GitHub token exchange returned an invalid response:", {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        contentType: tokenResponse.headers.get("content-type"),
+        bodyLength: tokenResponseText.length,
+      });
 
-    const tokenData = JSON.parse(tokenResponseText);
-
-    if (!tokenResponse.ok || tokenData.error || !tokenData.access_token) {
-      throw new Error("GitHub token exchange failed.");
+      throw new Error("GitHub returned an invalid token response.");
     }
 
-    // Retrieve the authorized GitHub account
+    console.log("GitHub token exchange result:", {
+      status: tokenResponse.status,
+      error: tokenData.error || null,
+      error_description: tokenData.error_description || null,
+      hasAccessToken: Boolean(tokenData.access_token),
+      hasRefreshToken: Boolean(tokenData.refresh_token),
+    });
+
+    if (!tokenResponse.ok || tokenData.error || !tokenData.access_token) {
+      throw new Error(
+        tokenData.error_description ||
+        tokenData.error ||
+        "GitHub token exchange failed."
+      );
+    }
+
+    // Retrieve the authorized GitHub account.
     const profileResponse = await fetch(
       "https://api.github.com/user",
       {
@@ -162,12 +183,21 @@ router.get("/callback", authenticateToken, async (req, res) => {
     );
 
     if (!profileResponse.ok) {
+      console.error("GitHub profile request failed:", {
+        status: profileResponse.status,
+        statusText: profileResponse.statusText,
+      });
+
       throw new Error("Could not retrieve GitHub profile.");
     }
 
     const profile = await profileResponse.json();
 
-    // Encrypt tokens before storing them
+    if (!profile.id || !profile.login) {
+      throw new Error("GitHub returned an incomplete user profile.");
+    }
+
+    // Encrypt tokens before storing them.
     const accessToken = encryptToken(tokenData.access_token);
 
     const refreshToken = tokenData.refresh_token
@@ -233,41 +263,49 @@ router.get("/callback", authenticateToken, async (req, res) => {
   }
 });
 
-// Get the connected GitHub account
+// Get the connected GitHub account.
 router.get("/status", authenticateToken, async (req, res) => {
-  const connection = await prisma.gitHubConnection.findUnique({
-    where: {
-      userId: req.userId,
-    },
-    select: {
-      githubUserId: true,
-      githubUsername: true,
-      avatarUrl: true,
-      createdAt: true,
-    },
-  });
+  try {
+    const connection = await prisma.gitHubConnection.findUnique({
+      where: {
+        userId: req.userId,
+      },
+      select: {
+        githubUserId: true,
+        githubUsername: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
+    });
 
-  return res.json({
-    connected: Boolean(connection),
-    connection,
-  });
-});
+    return res.json({
+      connected: Boolean(connection),
+      connection,
+    });
+  } catch (err) {
+    console.error("GitHub status error:", err.message);
 
-// List repositories accessible to the connected GitHub account
-router.get("/repositories", authenticateToken, async (req, res) => {
-  const connection = await prisma.gitHubConnection.findUnique({
-    where: {
-      userId: req.userId,
-    },
-  });
-
-  if (!connection) {
-    return res.status(404).json({
-      message: "No GitHub account is connected.",
+    return res.status(500).json({
+      message: "Could not check GitHub connection status.",
     });
   }
+});
 
+// List repositories accessible to the connected GitHub account.
+router.get("/repositories", authenticateToken, async (req, res) => {
   try {
+    const connection = await prisma.gitHubConnection.findUnique({
+      where: {
+        userId: req.userId,
+      },
+    });
+
+    if (!connection) {
+      return res.status(404).json({
+        message: "No GitHub account is connected.",
+      });
+    }
+
     const accessToken = decryptToken(
       connection.encryptedAccessToken,
       connection.accessTokenIv,
@@ -287,6 +325,11 @@ router.get("/repositories", authenticateToken, async (req, res) => {
           message: "Your GitHub authorization is no longer valid. Please reconnect your account.",
         });
       }
+
+      console.error("GitHub repository request failed:", {
+        status: response.status,
+        statusText: response.statusText,
+      });
 
       return res.status(502).json({
         message: "GitHub could not provide your repositories.",
