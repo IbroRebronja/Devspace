@@ -201,7 +201,7 @@ async function githubGraphQL(token, query, variables) {
 }
 
 function decodeGitHubContent(content) {
-  const decoded = Buffer.from(content.replace(/\\s/g, ""), "base64");
+  const decoded = Buffer.from(content.replace(/\s/g, ""), "base64");
 
   if (decoded.byteLength > MAX_PREVIEW_BYTES) {
     throw createGitHubError(
