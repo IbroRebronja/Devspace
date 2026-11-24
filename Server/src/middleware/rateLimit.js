@@ -5,14 +5,10 @@ const attempts = new Map();
 let requestsSinceCleanup = 0;
 
 function getClientIp(req) {
-  if (process.env.NODE_ENV === "production") {
-    // Render routes public web-service traffic through Cloudflare.
-    // Cloudflare supplies this header at its edge.
-    const cloudflareIp = req.get("cf-connecting-ip")?.trim();
+  const forwardedIp = req.ip;
 
-    if (cloudflareIp && isIP(cloudflareIp)) {
-      return cloudflareIp;
-    }
+  if (forwardedIp && isIP(forwardedIp)) {
+    return forwardedIp;
   }
 
   return req.socket.remoteAddress || "unknown";
