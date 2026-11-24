@@ -98,4 +98,14 @@ export const githubAPI = {
 
   getRepositories: () =>
     request("/github/repositories"),
+
+  getRepositoryDetails: (owner, repo) =>
+    request(`/github/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/details`),
+
+  getRepositoryContents: (owner, repo, path = "") => {
+    const query = new URLSearchParams();
+    if (path) query.set("path", path);
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+    return request(`/github/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents${suffix}`);
+  },
 };
