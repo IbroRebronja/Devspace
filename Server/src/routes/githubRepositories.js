@@ -361,7 +361,6 @@ router.get("/contributions", async (req, res) => {
           contributionsCollection(
             from: $from
             to: $to
-            includePrivateContributions: true
           ) {
             totalCommitContributions
             totalPullRequestContributions
