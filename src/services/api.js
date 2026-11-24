@@ -102,6 +102,8 @@ export const githubAPI = {
   getRepositoryDetails: (owner, repo) =>
     request(`/github/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/details`),
 
+  getActivity: () => request("/github/activity"),
+
   getRepositoryContents: (owner, repo, path = "") => {
     const query = new URLSearchParams();
     if (path) query.set("path", path);
