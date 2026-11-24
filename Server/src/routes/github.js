@@ -142,7 +142,12 @@ router.get("/callback", authenticateToken, async (req, res) => {
       }
     );
 
-    const tokenData = await tokenResponse.json();
+    const tokenResponseText = await tokenResponse.text();
+
+    console.log("GitHub token exchange status:", tokenResponse.status);
+    console.log("GitHub token exchange response:", tokenResponseText);
+
+    const tokenData = JSON.parse(tokenResponseText);
 
     if (!tokenResponse.ok || tokenData.error || !tokenData.access_token) {
       throw new Error("GitHub token exchange failed.");
