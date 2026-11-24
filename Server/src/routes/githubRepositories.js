@@ -228,4 +228,94 @@ router.get("/repositories/:owner/:repo/contents", async (req, res) => {
   }
 });
 
+
+// Aggregate recent commits, pull requests, and issues involving the connected account.
+router.get("/activity", async (req, res) => {
+  try {
+    const token = await getConnectionToken(req.userId);
+    const profile = await githubRequest(token, "/user");
+
+    const searches = await Promise.allSettled([
+      githubRequest(
+        token,
+        `/search/commits?q=${encodeURIComponent(`author:${profile.login}`)}&sort=committer-date&order=desc&per_page=10`
+      ),
+      githubRequest(
+        token,
+        `/search/issues?q=${encodeURIComponent(`involves:${profile.login} is:pr`)}&sort=updated&order=desc&per_page=10`
+      ),
+      githubRequest(
+        token,
+        `/search/issues?q=${encodeURIComponent(`involves:${profile.login} is:issue`)}&sort=updated&order=desc&per_page=10`
+      ),
+    ]);
+
+    const [commitSearch, pullSearch, issueSearch] = searches;
+
+    if (searches.every(result => result.status === "rejected")) {
+      throw commitSearch.reason;
+    }
+
+    const commits = commitSearch.status === "fulfilled"
+      ? (commitSearch.value.items || []).map(item => ({
+          id: item.sha,
+          type: "commit",
+          title: item.commit?.message?.split("\n")[0] || "Commit",
+          repository: item.repository?.full_name || "",
+          author: item.author?.login || item.commit?.author?.name || "Unknown",
+          date: item.commit?.author?.date || null,
+          url: item.html_url,
+          sha: item.sha.slice(0, 7),
+        }))
+      : [];
+
+    const pullRequests = pullSearch.status === "fulfilled"
+      ? (pullSearch.value.items || []).map(item => ({
+          id: item.id,
+          type: "pull_request",
+          title: item.title,
+          number: item.number,
+          repository: item.repository_url?.split("/").slice(-2).join("/") || "",
+          author: item.user?.login || "Unknown",
+          state: item.state,
+          date: item.updated_at || item.created_at,
+          url: item.html_url,
+          comments: item.comments || 0,
+        }))
+      : [];
+
+    const issues = issueSearch.status === "fulfilled"
+      ? (issueSearch.value.items || []).map(item => ({
+          id: item.id,
+          type: "issue",
+          title: item.title,
+          number: item.number,
+          repository: item.repository_url?.split("/").slice(-2).join("/") || "",
+          author: item.user?.login || "Unknown",
+          state: item.state,
+          date: item.updated_at || item.created_at,
+          url: item.html_url,
+          comments: item.comments || 0,
+        }))
+      : [];
+
+    return res.json({
+      account: profile.login,
+      commits,
+      pullRequests,
+      issues,
+      warnings: [
+        commitSearch.status === "rejected" ? "Commits could not be loaded." : null,
+        pullSearch.status === "rejected" ? "Pull requests could not be loaded." : null,
+        issueSearch.status === "rejected" ? "Issues could not be loaded." : null,
+      ].filter(Boolean),
+    });
+  } catch (error) {
+    console.error("GitHub activity error:", error.message);
+    return res.status(error.status || 500).json({
+      message: error.message || "Could not load GitHub activity.",
+    });
+  }
+});
+
 export default router;
