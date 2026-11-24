@@ -7,6 +7,8 @@ import { createAuthRateLimiter } from "../middleware/rateLimit.js";
 
 const router = express.Router();
 
+const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+
 const loginRateLimit = createAuthRateLimiter({
   limit: 10,
   windowMs: 15 * 60 * 1000,
@@ -33,15 +35,38 @@ const cookieOptions = {
   path: "/",
 };
 
-function createToken(userId) {
+function createToken(userId, sessionId) {
   return jwt.sign(
-    { sub: userId },
+    { sub: userId, sid: sessionId },
     process.env.JWT_SECRET,
     {
       algorithm: "HS256",
       expiresIn: "7d",
     }
   );
+}
+
+async function createSession(userId) {
+  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+
+  const session = await prisma.session.create({
+    data: {
+      userId,
+      expiresAt,
+    },
+  });
+
+  return {
+    id: session.id,
+    expiresAt,
+  };
+}
+
+function setSessionCookie(res, token, expiresAt) {
+  res.cookie("token", token, {
+    ...cookieOptions,
+    expires: expiresAt,
+  });
 }
 
 function publicUser(user) {
@@ -98,12 +123,10 @@ router.post("/register", registrationRateLimit, async (req, res) => {
       },
     });
 
-    const token = createToken(user.id);
+    const session = await createSession(user.id);
+    const token = createToken(user.id, session.id);
 
-    res.cookie("token", token, {
-      ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setSessionCookie(res, token, session.expiresAt);
 
     return res.status(201).json({
       message: "Account created successfully.",
@@ -156,12 +179,10 @@ router.post("/login", loginRateLimit, async (req, res) => {
       });
     }
 
-    const token = createToken(user.id);
+    const session = await createSession(user.id);
+    const token = createToken(user.id, session.id);
 
-    res.cookie("token", token, {
-      ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setSessionCookie(res, token, session.expiresAt);
 
     return res.json({
       message: "Logged in successfully.",
@@ -176,8 +197,32 @@ router.post("/login", loginRateLimit, async (req, res) => {
   }
 });
 
-// LOGOUT
-router.post("/logout", (req, res) => {
+// LOGOUT: revoke only the session represented by this browser's cookie.
+router.post("/logout", async (req, res) => {
+  const token = req.cookies?.token;
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+        algorithms: ["HS256"],
+      });
+
+      if (
+        typeof decoded.sub === "string" &&
+        typeof decoded.sid === "string"
+      ) {
+        await prisma.session.deleteMany({
+          where: {
+            id: decoded.sid,
+            userId: decoded.sub,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Session revocation error:", error);
+    }
+  }
+
   res.clearCookie("token", cookieOptions);
 
   return res.json({
