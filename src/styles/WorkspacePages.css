@@ -840,3 +840,231 @@
     grid-row: 1 / span 2;
   }
 }
+
+
+/* GitHub contributions overview */
+.contribution-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.contribution-stat-grid .workspace-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+}
+.contribution-stat-grid .workspace-summary > span {
+  color: #858496;
+  font-size: 11px;
+}
+.contribution-stat-grid .workspace-summary > strong {
+  color: #363448;
+  font-size: 23px;
+}
+.contribution-stat-grid .workspace-summary > small {
+  color: #9291a2;
+  font-size: 10px;
+}
+.contribution-total-card {
+  background: #f8f6ff;
+  border-color: #e8e2ff;
+}
+.contribution-panel {
+  min-width: 0;
+}
+.contribution-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.contribution-panel-heading h2 {
+  margin-bottom: 5px;
+}
+.contribution-panel-heading p {
+  margin: 0;
+}
+.contribution-panel-heading > a {
+  color: #7159df;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.contribution-calendar-wrap {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+.contribution-months,
+.contribution-calendar {
+  display: grid;
+  grid-template-columns: 34px repeat(53, 11px);
+  gap: 3px;
+  min-width: max-content;
+}
+.contribution-months {
+  min-height: 18px;
+  margin-bottom: 5px;
+}
+.contribution-months span {
+  color: #9291a2;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.contribution-calendar {
+  grid-template-rows: 11px;
+  grid-auto-flow: column;
+  grid-auto-columns: 11px;
+  align-items: start;
+}
+.contribution-weekday-labels {
+  display: grid;
+  grid-template-rows: repeat(7, 11px);
+  gap: 3px;
+  color: #9291a2;
+  font-size: 9px;
+}
+.contribution-week {
+  display: grid;
+  grid-template-rows: repeat(7, 11px);
+  gap: 3px;
+}
+.contribution-day {
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  background: #eeeef2;
+}
+.contribution-day.level-0 { background: #eeeef2; }
+.contribution-day.level-1 { background: #d9d0ff; }
+.contribution-day.level-2 { background: #b6a5ff; }
+.contribution-day.level-3 { background: #9279f0; }
+.contribution-day.level-4 { background: #6849d7; }
+.contribution-legend {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  color: #9291a2;
+  font-size: 9px;
+}
+.contribution-legend .contribution-day {
+  width: 10px;
+  height: 10px;
+}
+.contribution-month-chart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+  min-height: 175px;
+  padding-top: 8px;
+}
+.contribution-month-column {
+  display: grid;
+  grid-template-rows: 16px 115px 16px;
+  justify-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.contribution-month-column strong {
+  color: #777487;
+  font-size: 9px;
+}
+.contribution-month-track {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 28px;
+  height: 115px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #f1eff7;
+}
+.contribution-month-track span {
+  display: block;
+  width: 100%;
+  min-height: 3px;
+  border-radius: 5px;
+  background: #765ee3;
+}
+.contribution-month-column small {
+  color: #9291a2;
+  font-size: 9px;
+}
+.contribution-repository-list {
+  display: grid;
+}
+.contribution-repository-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(90px, 1fr) 16px;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 2px;
+  border-top: 1px solid #f0eff5;
+  color: inherit;
+  text-decoration: none;
+}
+.contribution-repository-row > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.contribution-repository-row strong {
+  color: #454357;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.contribution-repository-row small {
+  color: #9291a2;
+  font-size: 10px;
+}
+.contribution-repository-bar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #efedf5;
+}
+.contribution-repository-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #765ee3;
+}
+.contribution-repository-arrow {
+  color: #aaa7b8;
+}
+.contribution-repository-row:hover strong {
+  color: #7159df;
+}
+@media (max-width: 1000px) {
+  .contribution-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .contribution-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .contribution-month-chart {
+    gap: 5px;
+  }
+  .contribution-month-column strong {
+    font-size: 8px;
+  }
+  .contribution-repository-row {
+    grid-template-columns: minmax(0, 1fr) 70px 12px;
+    gap: 8px;
+  }
+  .contribution-panel-heading {
+    flex-direction: column;
+  }
+}
