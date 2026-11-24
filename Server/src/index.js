@@ -12,6 +12,10 @@ import githubRouter from "./routes/github.js";
 import githubRepositoriesRouter from "./routes/githubRepositories.js";
 
 const app = express();
+
+// Render places one trusted proxy in front of the web service.
+// This makes Express resolve req.ip from the forwarded client address.
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
