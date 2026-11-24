@@ -1,4 +1,3 @@
-
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -6,6 +5,13 @@ import prisma from "../prisma.js";
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
+
+// A precomputed hash keeps failed logins for unknown emails close in cost
+// to failed logins for existing accounts.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
+  "DevSpace-dummy-password-never-used-for-authentication",
+  12
+);
 
 const cookieOptions = {
   httpOnly: true,
@@ -18,7 +24,10 @@ function createToken(userId) {
   return jwt.sign(
     { sub: userId },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    {
+      algorithm: "HS256",
+      expiresIn: "7d",
+    }
   );
 }
 
@@ -122,18 +131,13 @@ router.post("/login", async (req, res) => {
       where: { email: cleanEmail },
     });
 
-    if (!user) {
-      return res.status(401).json({
-        message: "Invalid email or password.",
-      });
-    }
-
+    const passwordHash = user?.passwordHash || DUMMY_PASSWORD_HASH;
     const passwordMatches = await bcrypt.compare(
       password,
-      user.passwordHash
+      passwordHash
     );
 
-    if (!passwordMatches) {
+    if (!user || !passwordMatches) {
       return res.status(401).json({
         message: "Invalid email or password.",
       });
