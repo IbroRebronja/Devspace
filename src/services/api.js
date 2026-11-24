@@ -104,6 +104,8 @@ export const githubAPI = {
 
   getActivity: () => request("/github/activity"),
 
+  getContributions: () => request("/github/contributions"),
+
   getRepositoryContents: (owner, repo, path = "") => {
     const query = new URLSearchParams();
     if (path) query.set("path", path);
