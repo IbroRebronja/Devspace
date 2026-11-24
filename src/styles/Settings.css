@@ -1,0 +1,137 @@
+/* Settings and GitHub repository workspace */
+.workspace-page:has(.settings-profile) {
+  max-width: 1120px;
+}
+.workspace-page:has(.settings-profile) > .workspace-panel {
+  padding: 24px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow);
+}
+.workspace-page:has(.settings-profile) > .workspace-panel h2 {
+  color: var(--ds-text);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+.workspace-page:has(.settings-profile) > .workspace-panel > p {
+  color: var(--ds-muted);
+  font-size: 13px;
+}
+.workspace-page:has(.settings-profile) .settings-profile {
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-muted);
+}
+.workspace-page:has(.settings-profile) .settings-profile .avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--ds-accent-soft);
+  color: var(--ds-accent);
+  font-size: 14px;
+  font-weight: 700;
+}
+.workspace-page:has(.settings-profile) .settings-profile strong {
+  display: block;
+  color: var(--ds-text);
+  font-size: 13px;
+}
+.workspace-page:has(.settings-profile) .settings-profile small {
+  display: block;
+  margin-top: 4px;
+  color: var(--ds-muted);
+  font-size: 11px;
+}
+.workspace-page:has(.settings-profile) .settings-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+.workspace-page:has(.settings-profile) .workspace-link-button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ds-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background .15s ease;
+}
+.workspace-page:has(.settings-profile) .workspace-link-button:hover {
+  background: var(--ds-accent-hover);
+}
+.workspace-page:has(.settings-profile) .github-repository-row {
+  padding: 16px 12px;
+  border-top: 1px solid var(--ds-border);
+  border-radius: 8px;
+  gap: 6px;
+  transition: background .15s ease;
+}
+.workspace-page:has(.settings-profile) .github-repository-row:hover {
+  background: var(--ds-surface-muted);
+}
+.workspace-page:has(.settings-profile) .github-repository-name {
+  color: var(--ds-accent);
+  font-size: 13px;
+}
+.workspace-page:has(.settings-profile) .github-repository-description {
+  color: var(--ds-text-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.workspace-page:has(.settings-profile) .github-repository-meta,
+.workspace-page:has(.settings-profile) .github-repository-open {
+  color: var(--ds-muted);
+  font-size: 11px;
+}
+.workspace-page:has(.settings-profile) .github-repository-open {
+  color: var(--ds-accent);
+}
+.workspace-page:has(.settings-profile) [role="status"],
+.workspace-page:has(.settings-profile) [role="alert"] {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.workspace-page:has(.settings-profile) > .workspace-panel:last-child p {
+  max-width: 720px;
+}
+.workspace-page:has(.repo-detail-top) .workspace-panel {
+  border-color: var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow);
+}
+.workspace-page:has(.repo-detail-top) .repo-detail-top > a,
+.workspace-page:has(.repo-detail-top) .repo-commit-list > a:hover strong {
+  color: var(--ds-accent);
+}
+.workspace-page:has(.repo-detail-top) .repo-detail-tags span {
+  border-radius: 6px;
+  background: var(--ds-surface-muted);
+  color: var(--ds-text-soft);
+}
+.workspace-page:has(.repo-detail-top) .repo-stat-grid .workspace-summary {
+  border-color: var(--ds-border);
+  border-radius: var(--ds-radius-md);
+}
+.workspace-page:has(.repo-detail-top) .repo-file-row:hover {
+  background: var(--ds-surface-muted);
+}
+.workspace-page:has(.repo-detail-top) .repo-readme,
+.workspace-page:has(.repo-detail-top) .repo-file-preview pre {
+  background: #f8fafc;
+  color: var(--ds-text-soft);
+}
+.workspace-page:has(.repo-detail-top) .repo-warning {
+  background: var(--ds-warning-soft);
+  color: var(--ds-warning);
+}
+@media (max-width: 640px) {
+  .workspace-page:has(.settings-profile) > .workspace-panel {
+    padding: 18px;
+  }
+}
