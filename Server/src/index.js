@@ -1,4 +1,4 @@
-
+ 
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -9,6 +9,7 @@ import authRouter from "./routes/auth.js";
 import projectsRouter from "./routes/projects.js";
 import tasksRouter from "./routes/tasks.js";
 import githubRouter from "./routes/github.js";
+import githubRepositoriesRouter from "./routes/githubRepositories.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,6 +29,7 @@ app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/tasks", tasksRouter);
+app.use("/api/github", githubRepositoriesRouter);
 app.use("/api/github", githubRouter);
 
 // Handle unknown routes
