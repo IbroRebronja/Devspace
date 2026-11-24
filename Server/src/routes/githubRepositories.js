@@ -73,7 +73,7 @@ function decodeGitHubContent(content) {
 router.use(authenticateToken);
 
 // Load repository metadata, README, root files, recent commits, and branches.
-router.get("/:owner/:repo/details", async (req, res) => {
+router.get("/repositories/:owner/:repo/details", async (req, res) => {
   const { owner, repo } = req.params;
 
   if (!validateRepository(owner, repo)) {
@@ -177,7 +177,7 @@ router.get("/:owner/:repo/details", async (req, res) => {
 });
 
 // Browse a directory or preview a file in the repository.
-router.get("/:owner/:repo/contents", async (req, res) => {
+router.get("/repositories/:owner/:repo/contents", async (req, res) => {
   const { owner, repo } = req.params;
   const requestedPath = typeof req.query.path === "string" ? req.query.path : "";
 
