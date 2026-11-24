@@ -197,7 +197,6 @@ export default function Auth({ onLogin }) {
 
             {verificationPending && mode !== "reset" && (
               <div className="auth-notice" role="status">
-                <p>Check your email for a verification link before signing in.</p>
                 <button type="button" className="auth-text-button" onClick={handleResendVerification} disabled={loading || !email}>
                   Resend verification email
                 </button>
