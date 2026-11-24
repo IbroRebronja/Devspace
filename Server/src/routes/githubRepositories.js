@@ -2,6 +2,7 @@ import express from "express";
 import { authenticateToken } from "../middleware/auth.js";
 import prisma from "../prisma.js";
 import { decryptToken } from "../utils/githubTokens.js";
+import { githubRateLimit } from "../middleware/githubRateLimit.js";
 
 const router = express.Router();
 
@@ -97,7 +98,7 @@ function decodeGitHubContent(content) {
   return Buffer.from(content.replace(/\s/g, ""), "base64").toString("utf8");
 }
 
-router.use(authenticateToken);
+router.use(authenticateToken, githubRateLimit);
 
 // Load repository metadata, README, root files, recent commits, and branches.
 router.get("/repositories/:owner/:repo/details", async (req, res) => {
