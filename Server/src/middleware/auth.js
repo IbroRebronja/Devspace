@@ -10,22 +10,30 @@ export async function authenticateToken(req, res, next) {
     });
   }
 
+  let decoded;
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+    decoded = jwt.verify(token, process.env.JWT_SECRET, {
       algorithms: ["HS256"],
     });
+  } catch {
+    return res.status(401).json({
+      message: "Invalid or expired session.",
+    });
+  }
 
-    if (
-      typeof decoded.sub !== "string" ||
-      !decoded.sub ||
-      typeof decoded.sid !== "string" ||
-      !decoded.sid
-    ) {
-      return res.status(401).json({
-        message: "Invalid or expired session.",
-      });
-    }
+  if (
+    typeof decoded.sub !== "string" ||
+    !decoded.sub ||
+    typeof decoded.sid !== "string" ||
+    !decoded.sid
+  ) {
+    return res.status(401).json({
+      message: "Invalid or expired session.",
+    });
+  }
 
+  try {
     const session = await prisma.session.findUnique({
       where: { id: decoded.sid },
       select: {
@@ -47,9 +55,7 @@ export async function authenticateToken(req, res, next) {
     req.userId = decoded.sub;
     req.sessionId = decoded.sid;
     return next();
-  } catch {
-    return res.status(401).json({
-      message: "Invalid or expired session.",
-    });
+  } catch (error) {
+    return next(error);
   }
 }
