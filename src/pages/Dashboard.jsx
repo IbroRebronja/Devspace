@@ -7,6 +7,7 @@ import Calendar from "./Calendar";
 import Settings from "./Settings";
 import Support from "./Support";
 import GitHubActivity from "./GitHubActivity";
+import GitHubContributions from "./GitHubContributions";
 
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
@@ -27,6 +28,7 @@ const routeToPage = {
   "/tasks": "My Tasks",
   "/calendar": "Calendar",
   "/github-activity": "GitHub Activity",
+  "/contributions": "Contributions",
   "/settings": "Settings",
   "/support": "Help Center",
 };
@@ -37,6 +39,7 @@ const pageToRoute = {
   "My Tasks": "/tasks",
   "Calendar": "/calendar",
   "GitHub Activity": "/github-activity",
+  "Contributions": "/contributions",
   "Settings": "/settings",
   "Help Center": "/support",
 };
@@ -566,6 +569,11 @@ export default function Dashboard({ user, onLogout }) {
           {/* GITHUB ACTIVITY */}
           {active === "GitHub Activity" && (
             <GitHubActivity onOpenSettings={() => setActive("Settings")} />
+          )}
+
+          {/* GITHUB CONTRIBUTIONS */}
+          {active === "Contributions" && (
+            <GitHubContributions onOpenSettings={() => setActive("Settings")} />
           )}
 
           {/* SETTINGS */}
