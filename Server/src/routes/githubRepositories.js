@@ -66,6 +66,33 @@ async function githubRequest(token, endpoint) {
   return data;
 }
 
+
+async function githubGraphQL(token, query, variables) {
+  const response = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    headers: {
+      ...githubHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok || data?.errors?.length) {
+    const message = data?.errors?.map(item => item.message).join("; ");
+    const error = new Error(message || "GitHub could not load contribution data.");
+    error.status = response.status === 401 ? 401 : 502;
+    throw error;
+  }
+
+  if (!data?.data) {
+    throw new Error("GitHub returned incomplete contribution data.");
+  }
+
+  return data.data;
+}
+
 function decodeGitHubContent(content) {
   return Buffer.from(content.replace(/\s/g, ""), "base64").toString("utf8");
 }
@@ -314,6 +341,109 @@ router.get("/activity", async (req, res) => {
     console.error("GitHub activity error:", error.message);
     return res.status(error.status || 500).json({
       message: error.message || "Could not load GitHub activity.",
+    });
+  }
+});
+
+
+// Load the connected account's contribution calendar and repository totals.
+router.get("/contributions", async (req, res) => {
+  try {
+    const token = await getConnectionToken(req.userId);
+    const profile = await githubRequest(token, "/user");
+    const to = new Date();
+    const from = new Date(to);
+    from.setUTCDate(from.getUTCDate() - 364);
+
+    const query = `
+      query ContributionOverview($login: String!, $from: DateTime!, $to: DateTime!) {
+        user(login: $login) {
+          contributionsCollection(
+            from: $from
+            to: $to
+            includePrivateContributions: true
+          ) {
+            totalCommitContributions
+            totalPullRequestContributions
+            totalIssueContributions
+            totalPullRequestReviewContributions
+            contributionCalendar {
+              totalContributions
+              weeks {
+                contributionDays {
+                  date
+                  contributionCount
+                  weekday
+                }
+              }
+            }
+            commitContributionsByRepository(maxRepositories: 10) {
+              repository { nameWithOwner url }
+              contributions { totalCount }
+            }
+            pullRequestContributionsByRepository(maxRepositories: 10) {
+              repository { nameWithOwner url }
+              contributions { totalCount }
+            }
+            issueContributionsByRepository(maxRepositories: 10) {
+              repository { nameWithOwner url }
+              contributions { totalCount }
+            }
+          }
+        }
+      }
+    `;
+
+    const data = await githubGraphQL(token, query, {
+      login: profile.login,
+      from: from.toISOString(),
+      to: to.toISOString(),
+    });
+
+    const collection = data.user?.contributionsCollection;
+    if (!collection?.contributionCalendar) {
+      throw new Error("GitHub did not return a contribution calendar.");
+    }
+
+    const repositories = new Map();
+    const addRepositories = entries => {
+      for (const entry of entries || []) {
+        const name = entry.repository?.nameWithOwner;
+        if (!name) continue;
+        const current = repositories.get(name) || {
+          name,
+          url: entry.repository.url,
+          contributions: 0,
+        };
+        current.contributions += entry.contributions?.totalCount || 0;
+        repositories.set(name, current);
+      }
+    };
+
+    addRepositories(collection.commitContributionsByRepository);
+    addRepositories(collection.pullRequestContributionsByRepository);
+    addRepositories(collection.issueContributionsByRepository);
+
+    return res.json({
+      account: profile.login,
+      from: from.toISOString(),
+      to: to.toISOString(),
+      totalContributions: collection.contributionCalendar.totalContributions,
+      totals: {
+        commits: collection.totalCommitContributions || 0,
+        pullRequests: collection.totalPullRequestContributions || 0,
+        issues: collection.totalIssueContributions || 0,
+        reviews: collection.totalPullRequestReviewContributions || 0,
+      },
+      weeks: collection.contributionCalendar.weeks || [],
+      repositories: [...repositories.values()]
+        .sort((a, b) => b.contributions - a.contributions)
+        .slice(0, 8),
+    });
+  } catch (error) {
+    console.error("GitHub contributions error:", error.message);
+    return res.status(error.status || 500).json({
+      message: error.message || "Could not load GitHub contributions.",
     });
   }
 });
