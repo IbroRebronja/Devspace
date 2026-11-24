@@ -15,12 +15,14 @@ const legalPaths = [
 
 function App() {
   const isLegalPage = legalPaths.includes(window.location.pathname);
+  const searchParams = new URLSearchParams(window.location.search);
+  const hasAuthAction = searchParams.has("verifyEmail") || searchParams.has("resetPassword");
 
   const [user, setUser] = useState(null);
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    if (isLegalPage) {
+    if (isLegalPage || hasAuthAction) {
       setCheckingSession(false);
       return;
     }
@@ -37,7 +39,7 @@ function App() {
     }
 
     checkSession();
-  }, [isLegalPage]);
+  }, [isLegalPage, hasAuthAction]);
 
   async function handleLogout() {
     try {
@@ -75,7 +77,7 @@ function App() {
 
   return (
     <>
-      {user ? (
+      {user && !hasAuthAction ? (
         <Dashboard user={user} onLogout={handleLogout} />
       ) : (
         <Auth onLogin={setUser} />
