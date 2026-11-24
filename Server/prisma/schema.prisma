@@ -9,14 +9,15 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  passwordHash String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  name             String
+  email            String    @unique
+  passwordHash     String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  projects     Project[]
+  projects         Project[]
+  githubConnection GitHubConnection?
 }
 
 model Project {
@@ -44,4 +45,27 @@ model Task {
 
   projectId String
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model GitHubConnection {
+  id                       String   @id @default(cuid())
+  githubUserId             String
+  githubUsername           String
+  avatarUrl                String?
+
+  encryptedAccessToken     String
+  accessTokenIv            String
+  accessTokenTag            String
+  accessTokenExpiresAt     DateTime?
+
+  encryptedRefreshToken    String?
+  refreshTokenIv           String?
+  refreshTokenTag          String?
+  refreshTokenExpiresAt    DateTime?
+
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
