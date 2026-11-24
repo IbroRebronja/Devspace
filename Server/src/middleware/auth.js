@@ -1,4 +1,3 @@
-
 import jwt from "jsonwebtoken";
 
 export function authenticateToken(req, res, next) {
@@ -11,12 +10,19 @@ export function authenticateToken(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
+
+    if (typeof decoded.sub !== "string" || !decoded.sub) {
+      return res.status(401).json({
+        message: "Invalid or expired session.",
+      });
+    }
 
     req.userId = decoded.sub;
-
-    next();
-  } catch (error) {
+    return next();
+  } catch {
     return res.status(401).json({
       message: "Invalid or expired session.",
     });
