@@ -14,7 +14,10 @@ async function request(endpoint, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || "Something went wrong.");
+    const error = new Error(data.message || "Something went wrong.");
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
 
   return data;
@@ -32,6 +35,30 @@ export const authAPI = {
     request("/auth/login", {
       method: "POST",
       body: JSON.stringify(credentials),
+    }),
+
+  verifyEmail: (token) =>
+    request("/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
+  resendVerification: (email) =>
+    request("/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  forgotPassword: (email) =>
+    request("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token, password) =>
+    request("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
     }),
 
   logout: () =>
