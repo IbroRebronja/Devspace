@@ -404,3 +404,48 @@
     font-size: 11px;
   }
 }
+
+.auth-notice {
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px solid #cfe0ff;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.auth-notice p {
+  margin: 0;
+}
+
+.auth-text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.auth-text-button:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.auth-text-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.auth-forgot-link {
+  display: block;
+  margin: 14px auto 0;
+}
+
+.auth-notice .auth-text-button {
+  margin-top: 8px;
+}
