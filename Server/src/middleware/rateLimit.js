@@ -47,14 +47,14 @@ export function createAuthRateLimiter({ limit, windowMs, message }) {
       requestsSinceCleanup = 0;
     }
 
-    const keys = ["ip:" + getClientIp(req)];
+    const keys = ["ip:" + message + ":" + getClientIp(req)];
 
     if (typeof req.body?.email === "string") {
       const email = req.body.email.trim().toLowerCase();
 
       if (email) {
         const emailHash = crypto.createHash("sha256").update(email).digest("hex");
-        keys.push("email:" + emailHash);
+        keys.push("email:" + message + ":" + emailHash);
       }
     }
 
