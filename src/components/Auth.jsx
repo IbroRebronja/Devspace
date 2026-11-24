@@ -1,33 +1,95 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { authAPI } from "../services/api";
 import "../styles/Auth.css";
 
 export default function Auth({ onLogin }) {
-  const [mode, setMode] = useState("login");
+  const params = new URLSearchParams(window.location.search);
+  const verificationToken = params.get("verifyEmail");
+  const resetToken = params.get("resetPassword");
+
+  const [mode, setMode] = useState(resetToken ? "reset" : "login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verificationPending, setVerificationPending] = useState(false);
+  const verificationStarted = useRef(false);
+
+  useEffect(() => {
+    if (!verificationToken || verificationStarted.current) return;
+
+    verificationStarted.current = true;
+    setLoading(true);
+
+    authAPI.verifyEmail(verificationToken)
+      .then((result) => {
+        setNotice(result.message || "Email verified. You can now sign in.");
+        setMode("login");
+        window.history.replaceState({}, "", window.location.pathname);
+      })
+      .catch((err) => {
+        setError(err.message || "This verification link is invalid or expired.");
+        window.history.replaceState({}, "", window.location.pathname);
+      })
+      .finally(() => setLoading(false));
+  }, [verificationToken]);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    setNotice("");
     setLoading(true);
 
     try {
-      let result;
-
       if (mode === "register") {
-        result = await authAPI.register({ name, email, password });
-      } else {
-        result = await authAPI.login({ email, password });
+        const result = await authAPI.register({ name, email, password });
+        setVerificationPending(true);
+        setNotice(result.message || "Check your inbox for a verification email.");
+        setPassword("");
+        return;
       }
 
+      if (mode === "forgot") {
+        const result = await authAPI.forgotPassword(email);
+        setNotice(result.message || "If an account exists, a reset email has been sent.");
+        return;
+      }
+
+      if (mode === "reset") {
+        const result = await authAPI.resetPassword(resetToken, password);
+        setNotice(result.message || "Password reset. You can now sign in.");
+        setPassword("");
+        setMode("login");
+        window.history.replaceState({}, "", window.location.pathname);
+        return;
+      }
+
+      const result = await authAPI.login({ email, password });
       onLogin(result.user);
     } catch (err) {
-      setError(err.message || "Authentication failed.");
+      setError(err.message || "The request could not be completed.");
+
+      if (err.data?.requiresVerification) {
+        setVerificationPending(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    setError("");
+    setNotice("");
+    setLoading(true);
+
+    try {
+      const result = await authAPI.resendVerification(email);
+      setNotice(result.message);
+    } catch (err) {
+      setError(err.message || "Could not send the verification email.");
     } finally {
       setLoading(false);
     }
@@ -36,8 +98,25 @@ export default function Auth({ onLogin }) {
   function changeMode(nextMode) {
     setMode(nextMode);
     setError("");
+    setNotice("");
+    setVerificationPending(false);
     setShowPassword(false);
   }
+
+  const isPasswordMode = mode === "login" || mode === "register" || mode === "reset";
+  const heading = {
+    login: "Sign in to your account",
+    register: "Create your account",
+    forgot: "Reset your password",
+    reset: "Choose a new password",
+  }[mode];
+
+  const description = {
+    login: "Enter your details to access your workspace.",
+    register: "Create an account to start organising your work.",
+    forgot: "Enter your account email and we will send a reset link if it exists.",
+    reset: "Choose a new password for your DevSpace account.",
+  }[mode];
 
   return (
     <main className="auth-page">
@@ -87,38 +166,43 @@ export default function Auth({ onLogin }) {
 
             <div className="auth-heading">
               <span className="auth-kicker">
-                {mode === "login" ? "WELCOME BACK" : "GET STARTED"}
+                {mode === "login" ? "WELCOME BACK" : mode === "register" ? "GET STARTED" : "ACCOUNT SECURITY"}
               </span>
-              <h1>
-                {mode === "login" ? "Sign in to your account" : "Create your account"}
-              </h1>
-              <p>
-                {mode === "login"
-                  ? "Enter your details to access your workspace."
-                  : "Create an account to start organising your work."}
-              </p>
+              <h1>{heading}</h1>
+              <p>{description}</p>
             </div>
 
-            <div className="auth-tabs" role="tablist" aria-label="Authentication options">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mode === "login"}
-                className={mode === "login" ? "active" : ""}
-                onClick={() => changeMode("login")}
-              >
-                Sign in
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mode === "register"}
-                className={mode === "register" ? "active" : ""}
-                onClick={() => changeMode("register")}
-              >
-                Create account
-              </button>
-            </div>
+            {(mode === "login" || mode === "register") && (
+              <div className="auth-tabs" role="tablist" aria-label="Authentication options">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === "login"}
+                  className={mode === "login" ? "active" : ""}
+                  onClick={() => changeMode("login")}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === "register"}
+                  className={mode === "register" ? "active" : ""}
+                  onClick={() => changeMode("register")}
+                >
+                  Create account
+                </button>
+              </div>
+            )}
+
+            {verificationPending && mode !== "reset" && (
+              <div className="auth-notice" role="status">
+                <p>Check your email for a verification link before signing in.</p>
+                <button type="button" className="auth-text-button" onClick={handleResendVerification} disabled={loading || !email}>
+                  Resend verification email
+                </button>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="auth-form">
               {mode === "register" && (
@@ -136,64 +220,77 @@ export default function Auth({ onLogin }) {
                 </label>
               )}
 
-              <label className="auth-field">
-                <span>Email address</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  required
-                />
-              </label>
-
-              <label className="auth-field">
-                <span>Password</span>
-                <div className="auth-password-wrap">
+              {(mode !== "reset") && (
+                <label className="auth-field">
+                  <span>Email address</span>
                   <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="At least 8 characters"
-                    minLength={8}
-                    maxLength={72}
-                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
                     required
                   />
-                  <button
-                    type="button"
-                    className="auth-password-toggle"
-                    onClick={() => setShowPassword((visible) => !visible)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
-                </div>
-                {mode === "register" && (
-                  <small className="auth-field-hint">Use at least 8 characters.</small>
-                )}
-              </label>
-
-              {error && (
-                <p className="auth-error" role="alert">
-                  {error}
-                </p>
+                </label>
               )}
 
-              <button
-                type="submit"
-                className="auth-submit"
-                disabled={loading}
-              >
+              {isPasswordMode && (
+                <label className="auth-field">
+                  <span>{mode === "reset" ? "New password" : "Password"}</span>
+                  <div className="auth-password-wrap">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="At least 8 characters"
+                      minLength={8}
+                      maxLength={72}
+                      autoComplete={mode === "login" ? "current-password" : "new-password"}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="auth-password-toggle"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  {(mode === "register" || mode === "reset") && (
+                    <small className="auth-field-hint">Use at least 8 characters.</small>
+                  )}
+                </label>
+              )}
+
+              {error && <p className="auth-error" role="alert">{error}</p>}
+              {notice && <p className="auth-notice" role="status">{notice}</p>}
+
+              <button type="submit" className="auth-submit" disabled={loading || (verificationToken && !verificationStarted.current)}>
                 {loading
                   ? "Please wait..."
                   : mode === "login"
                     ? "Sign in"
-                    : "Create account"}
+                    : mode === "register"
+                      ? "Create account"
+                      : mode === "forgot"
+                        ? "Send reset link"
+                        : "Reset password"}
                 {!loading && <span aria-hidden="true">→</span>}
               </button>
             </form>
+
+            {mode === "login" && (
+              <button type="button" className="auth-text-button auth-forgot-link" onClick={() => changeMode("forgot")}>
+                Forgot password?
+              </button>
+            )}
+
+            {(mode === "forgot" || mode === "reset") && (
+              <button type="button" className="auth-text-button auth-forgot-link" onClick={() => changeMode("login")}>
+                Back to sign in
+              </button>
+            )}
 
             <p className="auth-footer">
               By continuing, you agree to use DevSpace responsibly.
