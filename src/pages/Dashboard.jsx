@@ -362,7 +362,7 @@ export default function Dashboard({ user, onLogout }) {
                   </div>
 
                   <h1>
-                    {greeting}, {firstName} <span>✦</span>
+                    {greeting}, {firstName}
                   </h1>
 
                   <p>
@@ -387,15 +387,15 @@ export default function Dashboard({ user, onLogout }) {
                   label="Assigned projects"
                   value={projects.length}
                   detail="Currently in progress"
-                  icon="▦"
-                  color="purple"
+                  icon="projects"
+                  color="blue"
                 />
 
                 <StatCard
                   label="Total tasks"
                   value={total}
                   detail={`${total - completed} tasks remaining`}
-                  icon="✓"
+                  icon="tasks"
                   color="blue"
                 />
 
@@ -403,15 +403,15 @@ export default function Dashboard({ user, onLogout }) {
                   label="Completed tasks"
                   value={completed}
                   detail={`${overallProgress}% overall completion`}
-                  icon="↗"
+                  icon="completed"
                   color="green"
                 />
 
                 <StatCard
-                  label="Hours logged"
-                  value="24h"
-                  detail="This week"
-                  icon="◷"
+                  label="Tasks remaining"
+                  value={total - completed}
+                  detail="Across all projects"
+                  icon="remaining"
                   color="orange"
                 />
               </section>
@@ -426,7 +426,9 @@ export default function Dashboard({ user, onLogout }) {
                     <h2>Overall progress</h2>
 
                     <p>
-                      Keep going! Every completed task counts.
+                      {total === 0
+                        ? "Add tasks to your projects to see your progress."
+                        : "A clear view of completed work across all your projects."}
                     </p>
                   </div>
 
@@ -485,11 +487,11 @@ export default function Dashboard({ user, onLogout }) {
                   </div>
 
                   <div className="activity-note">
-                    <span>✦</span>
-
-                    {completed === total
-                      ? "Amazing work! All tasks are complete."
-                      : "You're making progress. Keep it up!"}
+                    {total === 0
+                      ? "No tasks yet. Add a task to start tracking progress."
+                      : completed === total
+                        ? "All tasks are complete."
+                        : "Tasks left to complete: " + (total - completed)}
                   </div>
                 </article>
               </section>
@@ -533,7 +535,17 @@ export default function Dashboard({ user, onLogout }) {
                 </div>
 
                 {projects.length === 0 && (
-                  <p>You haven't created any projects yet.</p>
+                  <div className="projects-empty-state">
+                    <strong>No projects yet</strong>
+                    <p>Create your first project to organize tasks and track progress.</p>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={openNewProjectForm}
+                    >
+                      Create your first project
+                    </button>
+                  </div>
                 )}
               </section>
             </>
