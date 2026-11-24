@@ -44,7 +44,7 @@ function ContributionHeatmap({ weeks }) {
       </div>
       <div className="contribution-calendar">
         <div className="contribution-weekday-labels" aria-hidden="true">
-          <span>Sun</span><span /><span>Tue</span><span /><span>Thu</span><span /><span>Sat</span>
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
         </div>
         {weeks.map((week, index) => (
           <div className="contribution-week" key={index}>
