@@ -33,17 +33,115 @@ async function getConnectionToken(userId) {
   );
 }
 
+const GITHUB_REQUEST_TIMEOUT_MS = 10_000;
+const MAX_GITHUB_RESPONSE_BYTES = 2 * 1024 * 1024;
+const MAX_PREVIEW_BYTES = 1024 * 1024;
+
 function validateRepository(owner, repo) {
   const valid = /^[A-Za-z0-9_.-]+$/;
-  return valid.test(owner) && valid.test(repo);
+  return (
+    typeof owner === "string" &&
+    typeof repo === "string" &&
+    owner.length > 0 &&
+    owner.length <= 100 &&
+    repo.length > 0 &&
+    repo.length <= 100 &&
+    owner !== "." &&
+    owner !== ".." &&
+    repo !== "." &&
+    repo !== ".." &&
+    valid.test(owner) &&
+    valid.test(repo)
+  );
+}
+
+function createGitHubError(message, status) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+async function readLimitedResponse(response, maxBytes) {
+  const contentLength = Number(response.headers.get("content-length"));
+
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    await response.body?.cancel().catch(() => {});
+    throw createGitHubError(
+      "GitHub response exceeds the allowed size.",
+      413
+    );
+  }
+
+  if (!response.body) return "";
+
+  const reader = response.body.getReader();
+  const chunks = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      totalBytes += value.byteLength;
+
+      if (totalBytes > maxBytes) {
+        await reader.cancel().catch(() => {});
+        throw createGitHubError(
+          "GitHub response exceeds the allowed size.",
+          413
+        );
+      }
+
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  return Buffer.concat(chunks, totalBytes).toString("utf8");
+}
+
+async function fetchGitHubText(url, options, maxBytes = MAX_GITHUB_RESPONSE_BYTES) {
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    GITHUB_REQUEST_TIMEOUT_MS
+  );
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    const text = await readLimitedResponse(response, maxBytes);
+
+    return { response, text };
+  } catch (error) {
+    if (error.status) throw error;
+
+    if (controller.signal.aborted || error.name === "AbortError" || error.name === "TimeoutError") {
+      throw createGitHubError(
+        "GitHub took too long to respond. Please try again.",
+        504
+      );
+    }
+
+    throw createGitHubError(
+      "Could not reach GitHub. Please try again.",
+      502
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function githubRequest(token, endpoint) {
-  const response = await fetch(`https://api.github.com${endpoint}`, {
-    headers: githubHeaders(token),
-  });
+  const { response, text } = await fetchGitHubText(
+    `https://api.github.com${endpoint}`,
+    { headers: githubHeaders(token) }
+  );
 
-  const text = await response.text();
   let data = null;
 
   if (text) {
@@ -67,18 +165,26 @@ async function githubRequest(token, endpoint) {
   return data;
 }
 
-
 async function githubGraphQL(token, query, variables) {
-  const response = await fetch("https://api.github.com/graphql", {
-    method: "POST",
-    headers: {
-      ...githubHeaders(token),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query, variables }),
-  });
+  const { response, text } = await fetchGitHubText(
+    "https://api.github.com/graphql",
+    {
+      method: "POST",
+      headers: {
+        ...githubHeaders(token),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, variables }),
+    }
+  );
 
-  const data = await response.json().catch(() => null);
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error("GitHub returned an unreadable contribution response.");
+  }
 
   if (!response.ok || data?.errors?.length) {
     const message = data?.errors?.map(item => item.message).join("; ");
@@ -95,7 +201,16 @@ async function githubGraphQL(token, query, variables) {
 }
 
 function decodeGitHubContent(content) {
-  return Buffer.from(content.replace(/\s/g, ""), "base64").toString("utf8");
+  const decoded = Buffer.from(content.replace(/\\s/g, ""), "base64");
+
+  if (decoded.byteLength > MAX_PREVIEW_BYTES) {
+    throw createGitHubError(
+      "This file is too large to preview. Open it directly on GitHub instead.",
+      413
+    );
+  }
+
+  return decoded.toString("utf8");
 }
 
 router.use(authenticateToken, githubRateLimit);
@@ -125,14 +240,25 @@ router.get("/repositories/:owner/:repo/details", async (req, res) => {
       throw repository.reason;
     }
 
-    const readme = readmeResult.status === "fulfilled"
-      ? {
+    let readme = null;
+    let readmeTooLarge = false;
+
+    if (readmeResult.status === "fulfilled") {
+      try {
+        readme = {
           name: readmeResult.value.name,
           path: readmeResult.value.path,
           content: decodeGitHubContent(readmeResult.value.content || ""),
           htmlUrl: readmeResult.value.html_url,
+        };
+      } catch (error) {
+        if (error.status === 413) {
+          readmeTooLarge = true;
+        } else {
+          throw error;
         }
-      : null;
+      }
+    }
 
     const contents = contentsResult.status === "fulfilled" && Array.isArray(contentsResult.value)
       ? contentsResult.value.map(item => ({
@@ -190,6 +316,7 @@ router.get("/repositories/:owner/:repo/details", async (req, res) => {
       commits,
       branches,
       warnings: [
+        readmeTooLarge ? "README is too large to preview." : null,
         readmeResult.status === "rejected" ? "README is not available." : null,
         contentsResult.status === "rejected" ? "Repository files could not be loaded." : null,
         commitsResult.status === "rejected" ? "Recent commits could not be loaded." : null,
@@ -213,7 +340,10 @@ router.get("/repositories/:owner/:repo/contents", async (req, res) => {
     return res.status(400).json({ message: "Invalid repository name." });
   }
 
-  if (requestedPath.split("/").some(part => part === "." || part === "..")) {
+  if (
+    requestedPath.length > 1024 ||
+    requestedPath.split("/").some(part => part === "." || part === "..")
+  ) {
     return res.status(400).json({ message: "Invalid repository path." });
   }
 
@@ -235,6 +365,12 @@ router.get("/repositories/:owner/:repo/contents", async (req, res) => {
           size: item.size,
           htmlUrl: item.html_url,
         })),
+      });
+    }
+
+    if (Number(result.size) > MAX_PREVIEW_BYTES) {
+      return res.status(413).json({
+        message: "This file is too large to preview. Open it directly on GitHub instead.",
       });
     }
 
