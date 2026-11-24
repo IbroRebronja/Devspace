@@ -1,0 +1,450 @@
+:root {
+  --ds-bg: #f6f8fb;
+  --ds-surface: #ffffff;
+  --ds-surface-muted: #f8fafc;
+  --ds-border: #e5eaf1;
+  --ds-border-strong: #d7e0eb;
+  --ds-text: #172033;
+  --ds-text-soft: #475467;
+  --ds-muted: #667085;
+  --ds-subtle: #98a2b3;
+  --ds-accent: #2563eb;
+  --ds-accent-hover: #1d4ed8;
+  --ds-accent-soft: #eff6ff;
+  --ds-success: #15803d;
+  --ds-success-soft: #ecfdf3;
+  --ds-warning: #b45309;
+  --ds-warning-soft: #fffaeb;
+  --ds-danger: #b42318;
+  --ds-danger-soft: #fef3f2;
+  --ds-radius-sm: 8px;
+  --ds-radius-md: 12px;
+  --ds-radius-lg: 16px;
+  --ds-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.035);
+}
+
+html {
+  background: var(--ds-bg);
+}
+
+body {
+  color: var(--ds-text);
+  background: var(--ds-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.24);
+  outline-offset: 2px;
+}
+
+a {
+  transition: color 160ms ease;
+}
+
+.app-shell,
+.main-content {
+  background: var(--ds-bg);
+}
+
+.main-content {
+  color: var(--ds-text);
+}
+
+.sidebar {
+  background: var(--ds-surface);
+  border-right-color: var(--ds-border);
+  padding-top: 25px;
+}
+
+.brand {
+  color: var(--ds-text);
+  letter-spacing: -0.7px;
+  margin-bottom: 46px;
+}
+
+.brand-icon {
+  background: var(--ds-accent);
+  border-radius: 10px;
+}
+
+.nav-label,
+.section-kicker,
+.eyebrow {
+  color: var(--ds-subtle);
+  letter-spacing: 1.15px;
+}
+
+.nav-link {
+  min-height: 42px;
+  border-radius: var(--ds-radius-sm);
+  color: var(--ds-muted);
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.nav-link > span {
+  width: 20px;
+  display: grid;
+  place-items: center;
+  color: currentColor;
+}
+
+.nav-link:hover {
+  color: var(--ds-text);
+  background: var(--ds-surface-muted);
+}
+
+.nav-link.active {
+  color: var(--ds-accent);
+  background: var(--ds-accent-soft);
+  box-shadow: inset 2px 0 0 var(--ds-accent);
+}
+
+.help-card {
+  background: var(--ds-surface-muted);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+}
+
+.help-icon {
+  color: var(--ds-accent);
+  background: var(--ds-accent-soft);
+  border-radius: 8px;
+}
+
+.help-card p,
+.profile small,
+.profile-details small {
+  color: var(--ds-muted);
+}
+
+.help-card button,
+.profile-dropdown button:hover {
+  color: var(--ds-accent);
+}
+
+.profile {
+  border-top-color: var(--ds-border);
+}
+
+.profile-menu:hover,
+.profile-dropdown button:hover {
+  background: var(--ds-accent-soft);
+}
+
+.profile-dropdown {
+  border-color: var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow);
+}
+
+.avatar {
+  background: #eaf1ff;
+  color: #2457b8;
+}
+
+.topbar {
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom-color: var(--ds-border);
+  backdrop-filter: blur(12px);
+}
+
+.breadcrumb {
+  color: var(--ds-muted);
+}
+
+.breadcrumb strong {
+  color: var(--ds-text);
+  font-weight: 650;
+}
+
+.dashboard-content {
+  color: var(--ds-text);
+}
+
+h1,
+h2,
+h3 {
+  color: var(--ds-text);
+}
+
+h1 {
+  letter-spacing: -0.9px;
+}
+
+.welcome p,
+.section-header p,
+.workspace-page-heading p,
+.workspace-panel p {
+  color: var(--ds-muted);
+}
+
+.primary-button,
+.workspace-link-button,
+.auth-submit {
+  background: var(--ds-accent);
+  border-radius: var(--ds-radius-sm);
+  box-shadow: none;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.primary-button:hover,
+.workspace-link-button:hover,
+.auth-submit:hover {
+  background: var(--ds-accent-hover);
+}
+
+.primary-button:active,
+.workspace-link-button:active,
+.auth-submit:active {
+  transform: translateY(1px);
+}
+
+.stat-card,
+.progress-summary,
+.activity-card,
+.workspace-summary,
+.workspace-list,
+.workspace-panel,
+.project-modal,
+.auth-card {
+  background: var(--ds-surface);
+  border-color: var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: none;
+}
+
+.stat-top,
+.stat-detail,
+.progress-summary p,
+.circle-inner span,
+.breakdown-row,
+.workspace-task small,
+.workspace-event small,
+.settings-profile small {
+  color: var(--ds-muted);
+}
+
+.stat-value,
+.github-activity-stats .workspace-summary > strong,
+.contribution-stat-grid .workspace-summary > strong {
+  color: var(--ds-text);
+}
+
+.stat-icon,
+.event-date,
+.github-activity-icon,
+.repo-detail-tags span {
+  border-radius: 9px;
+}
+
+.purple {
+  color: #2457b8;
+  background: #eaf1ff;
+}
+
+.blue {
+  color: #2457b8;
+  background: #eaf1ff;
+}
+
+.green {
+  color: var(--ds-success);
+  background: var(--ds-success-soft);
+}
+
+.orange {
+  color: var(--ds-warning);
+  background: var(--ds-warning-soft);
+}
+
+.progress-circle {
+  background: conic-gradient(var(--ds-accent) var(--progress), #e9eef5 0);
+}
+
+.breakdown-track,
+.workspace-track {
+  background: #edf1f6;
+}
+
+.breakdown-track > div,
+.workspace-track > div,
+.workspace-link-button,
+.contribution-month-track span,
+.contribution-repository-bar i {
+  background: var(--ds-accent);
+}
+
+.activity-note,
+.contribution-total-card {
+  background: var(--ds-accent-soft);
+  border-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.project-count,
+.add-task-button {
+  background: var(--ds-accent-soft);
+  color: var(--ds-accent);
+  border-color: #dbeafe;
+}
+
+.workspace-summary,
+.workspace-list,
+.workspace-panel {
+  margin-bottom: 18px;
+}
+
+.workspace-task,
+.workspace-event,
+.support-question,
+.github-activity-item,
+.contribution-repository-row {
+  border-color: var(--ds-border);
+}
+
+.workspace-task strong,
+.workspace-event strong,
+.project-modal-heading h2,
+.github-activity-item-main strong,
+.contribution-repository-row strong {
+  color: var(--ds-text);
+}
+
+.task-status,
+.github-repository-name,
+.github-repository-open,
+.repo-detail-top > a,
+.contribution-panel-heading > a {
+  color: var(--ds-accent);
+}
+
+.workspace-link-button:hover,
+.github-repository-row:hover .github-repository-name,
+.repo-commit-list > a:hover strong,
+.github-activity-item:hover .github-activity-item-main > strong {
+  color: var(--ds-accent-hover);
+}
+
+.github-activity-filters button,
+.secondary-button,
+.project-actions button,
+.project-modal-close {
+  border-color: var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  color: var(--ds-text-soft);
+}
+
+.github-activity-filters button.active {
+  border-color: #bfdbfe;
+  background: var(--ds-accent-soft);
+  color: var(--ds-accent);
+}
+
+.github-activity-icon.commit {
+  background: var(--ds-accent-soft);
+  color: var(--ds-accent);
+}
+
+.contribution-day.level-0 { background: #edf1f6; }
+.contribution-day.level-1 { background: #dbeafe; }
+.contribution-day.level-2 { background: #93c5fd; }
+.contribution-day.level-3 { background: #3b82f6; }
+.contribution-day.level-4 { background: #1d4ed8; }
+
+.contribution-month-track {
+  background: #edf1f6;
+}
+
+.contribution-legend {
+  color: var(--ds-muted);
+}
+
+.repo-readme,
+.repo-file-preview pre {
+  background: #f8fafc;
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-soft);
+}
+
+.repo-warning {
+  background: var(--ds-warning-soft);
+  color: var(--ds-warning);
+}
+
+.project-modal-overlay {
+  background: rgba(16, 24, 40, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.project-modal {
+  box-shadow: 0 24px 64px rgba(16, 24, 40, 0.18);
+}
+
+.project-modal input,
+.project-modal textarea,
+.project-modal select,
+.auth-form input,
+.task-form input {
+  border-color: var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  color: var(--ds-text);
+}
+
+.project-modal input:focus,
+.project-modal textarea:focus,
+.project-modal select:focus,
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--ds-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.auth-page {
+  background: var(--ds-bg);
+}
+
+.auth-brand-icon {
+  background: var(--ds-accent);
+  border-radius: 10px;
+}
+
+.auth-tabs button.active {
+  color: var(--ds-accent);
+}
+
+.site-footer {
+  border-top-color: var(--ds-border);
+  color: var(--ds-muted);
+}
+
+.site-footer a {
+  color: var(--ds-accent);
+}
+
+footer {
+  border-top-color: var(--ds-border);
+  color: var(--ds-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
