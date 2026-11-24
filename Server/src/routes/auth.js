@@ -93,7 +93,8 @@ function createRawToken() {
 }
 
 function getClientUrl() {
-  const value = process.env.CLIENT_URL;
+  const value = process.env.CLIENT_URL ||
+    (process.env.NODE_ENV === "production" ? null : "http://localhost:5173");
 
   if (!value) {
     throw new Error("CLIENT_URL is not configured.");
