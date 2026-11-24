@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { githubAPI } from "../services/api";
 import "../styles/WorkspacePages.css";
+import "../styles/GitHubContributions.css";
 
 function formatNumber(value) {
   return new Intl.NumberFormat().format(value || 0);
@@ -28,6 +29,10 @@ function ContributionHeatmap({ weeks }) {
     previousMonth = month;
   });
 
+  if (!weeks.length || !days.length) {
+    return <div className="contribution-empty">No daily contribution data was returned by GitHub.</div>;
+  }
+
   return (
     <div className="contribution-calendar-wrap">
       <div className="contribution-months" aria-hidden="true">
@@ -39,23 +44,14 @@ function ContributionHeatmap({ weeks }) {
       </div>
       <div className="contribution-calendar">
         <div className="contribution-weekday-labels" aria-hidden="true">
-          <span>Mon</span>
-          <span />
-          <span>Wed</span>
-          <span />
-          <span>Fri</span>
-          <span />
-          <span />
+          <span>Mon</span><span /><span>Wed</span><span /><span>Fri</span><span /><span />
         </div>
         {weeks.map((week, index) => (
           <div className="contribution-week" key={index}>
             {(week.contributionDays || []).map(day => {
               const date = new Date(day.date + "T00:00:00");
               const label = date.toLocaleDateString(undefined, {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                year: "numeric",
+                weekday: "long", month: "long", day: "numeric", year: "numeric",
               });
               return (
                 <span
@@ -69,7 +65,7 @@ function ContributionHeatmap({ weeks }) {
           </div>
         ))}
       </div>
-      <div className="contribution-legend">
+      <div className="contribution-legend" aria-label="Contribution activity scale">
         <span>Less</span>
         {[0, 1, 2, 3, 4].map(level => (
           <span key={level} className={`contribution-day level-${level}`} />
@@ -77,6 +73,14 @@ function ContributionHeatmap({ weeks }) {
         <span>More</span>
       </div>
     </div>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M16.2 8A6.5 6.5 0 0 0 4.7 5.2L3.5 6.5M3.5 6.5V3.8M3.5 6.5h2.8M3.8 12A6.5 6.5 0 0 0 15.3 14.8l1.2-1.3m0 0v2.7m0-2.7h-2.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -127,26 +131,29 @@ export default function GitHubContributions({ onOpenSettings }) {
 
   if (loading) {
     return (
-      <section className="workspace-page">
-        <div className="workspace-panel">Loading GitHub contributions...</div>
+      <section className="workspace-page github-contributions-page">
+        <div className="workspace-panel github-contributions-loading">
+          <span className="github-contributions-loader" />
+          Loading GitHub contributions...
+        </div>
       </section>
     );
   }
 
   if (error && !data) {
     return (
-      <section className="workspace-page">
+      <section className="workspace-page github-contributions-page">
         <div className="workspace-page-heading">
           <div>
-            <span className="section-kicker">DEVELOPER WORKSPACE</span>
-            <h1>Contributions Overview</h1>
-            <p>Your GitHub activity over the last 365 days.</p>
+            <span className="section-kicker">GITHUB INSIGHTS</span>
+            <h1>Contributions</h1>
+            <p>A view of your contribution activity over the last 365 days.</p>
           </div>
         </div>
-        <div className="workspace-panel github-activity-error" role="alert">
+        <div className="workspace-panel github-contributions-error" role="alert">
           <strong>Could not load contribution data</strong>
           <p>{error}</p>
-          <div className="github-activity-actions">
+          <div className="github-contributions-actions">
             <button type="button" className="secondary-button" onClick={() => loadContributions()}>
               Try again
             </button>
@@ -160,54 +167,44 @@ export default function GitHubContributions({ onOpenSettings }) {
   }
 
   const totals = data?.totals || {};
+  const stats = [
+    { label: "Total contributions", value: data?.totalContributions, detail: "Across the last 365 days", featured: true },
+    { label: "Commits", value: totals.commits, detail: "Code contributions" },
+    { label: "Pull requests", value: totals.pullRequests, detail: "Pull requests opened" },
+    { label: "Issues", value: totals.issues, detail: "Issues opened" },
+    { label: "Reviews", value: totals.reviews, detail: "Pull request reviews" },
+  ];
 
   return (
-    <section className="workspace-page">
-      <div className="workspace-page-heading github-activity-heading">
+    <section className="workspace-page github-contributions-page">
+      <div className="workspace-page-heading github-contributions-heading">
         <div>
-          <span className="section-kicker">DEVELOPER WORKSPACE</span>
-          <h1>Contributions Overview</h1>
+          <span className="section-kicker">GITHUB INSIGHTS</span>
+          <h1>Contributions</h1>
           <p>
-            Your GitHub contributions over the last 365 days for{" "}
-            <strong>{data?.account || "your account"}</strong>.
+            Your GitHub activity over the last 365 days
+            {data?.account ? <> for <strong>{data.account}</strong></> : ""}.
           </p>
         </div>
         <button
           type="button"
-          className="secondary-button"
+          className="secondary-button github-contributions-refresh"
           onClick={() => loadContributions(true)}
           disabled={refreshing}
         >
-          {refreshing ? "Refreshing..." : "↻ Refresh"}
+          <RefreshIcon />
+          {refreshing ? "Refreshing..." : "Refresh"}
         </button>
       </div>
 
       <div className="contribution-stat-grid">
-        <article className="workspace-summary contribution-total-card">
-          <span>Total contributions</span>
-          <strong>{formatNumber(data?.totalContributions)}</strong>
-          <small>Across the last 365 days</small>
-        </article>
-        <article className="workspace-summary">
-          <span>Commits</span>
-          <strong>{formatNumber(totals.commits)}</strong>
-          <small>Code contributions</small>
-        </article>
-        <article className="workspace-summary">
-          <span>Pull requests</span>
-          <strong>{formatNumber(totals.pullRequests)}</strong>
-          <small>Pull requests opened</small>
-        </article>
-        <article className="workspace-summary">
-          <span>Issues</span>
-          <strong>{formatNumber(totals.issues)}</strong>
-          <small>Issues opened</small>
-        </article>
-        <article className="workspace-summary">
-          <span>Reviews</span>
-          <strong>{formatNumber(totals.reviews)}</strong>
-          <small>Pull request reviews</small>
-        </article>
+        {stats.map(stat => (
+          <article className={`workspace-summary${stat.featured ? " contribution-total-card" : ""}`} key={stat.label}>
+            <span>{stat.label}</span>
+            <strong>{formatNumber(stat.value)}</strong>
+            <small>{stat.detail}</small>
+          </article>
+        ))}
       </div>
 
       {error && <p className="repo-warning" role="alert">{error}</p>}
@@ -216,11 +213,13 @@ export default function GitHubContributions({ onOpenSettings }) {
         <div className="contribution-panel-heading">
           <div>
             <h2>Contribution activity</h2>
-            <p>{formatNumber(data?.totalContributions)} contributions in the last year</p>
+            <p><strong>{formatNumber(data?.totalContributions)}</strong> contributions in the last year</p>
           </div>
-          <a href={`https://github.com/${encodeURIComponent(data?.account || "")}`} target="_blank" rel="noreferrer">
-            View GitHub profile ↗
-          </a>
+          {data?.account && (
+            <a href={`https://github.com/${encodeURIComponent(data.account)}`} target="_blank" rel="noreferrer">
+              View GitHub profile <span aria-hidden="true">↗</span>
+            </a>
+          )}
         </div>
         <ContributionHeatmap weeks={data?.weeks || []} />
       </article>
@@ -232,24 +231,28 @@ export default function GitHubContributions({ onOpenSettings }) {
             <p>Contribution totals grouped by month</p>
           </div>
         </div>
-        <div className="contribution-month-chart">
-          {monthlyTotals.map((month, index) => (
-            <div className="contribution-month-column" key={index}>
-              <strong>{formatNumber(month.total)}</strong>
-              <div className="contribution-month-track">
-                <span style={{ height: `${Math.max(3, (month.total / maxMonth) * 100)}%` }} />
+        {monthlyTotals.length ? (
+          <div className="contribution-month-chart">
+            {monthlyTotals.map((month, index) => (
+              <div className="contribution-month-column" key={index}>
+                <strong>{formatNumber(month.total)}</strong>
+                <div className="contribution-month-track">
+                  <span style={{ height: `${Math.max(3, (month.total / maxMonth) * 100)}%` }} />
+                </div>
+                <small>{month.label}</small>
               </div>
-              <small>{month.label}</small>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="contribution-empty">No monthly contribution totals are available.</div>
+        )}
       </article>
 
       <article className="workspace-panel contribution-panel">
         <div className="contribution-panel-heading">
           <div>
             <h2>Most active repositories</h2>
-            <p>Repositories with the most commits, pull requests, and issues</p>
+            <p>Repositories ranked by contribution count</p>
           </div>
         </div>
         {data?.repositories?.length ? (
@@ -262,25 +265,25 @@ export default function GitHubContributions({ onOpenSettings }) {
                 key={repository.name}
                 className="contribution-repository-row"
               >
-                <span>
+                <span className="contribution-repository-info">
                   <strong>{repository.name}</strong>
                   <small>{formatNumber(repository.contributions)} contributions</small>
                 </span>
-                <span className="contribution-repository-bar">
+                <span className="contribution-repository-bar" aria-hidden="true">
                   <i style={{
-                    width: `${Math.max(2, (repository.contributions / data.repositories[0].contributions) * 100)}%`
+                    width: `${Math.max(2, (repository.contributions / Math.max(1, data.repositories[0].contributions)) * 100)}%`
                   }} />
                 </span>
-                <span className="contribution-repository-arrow">↗</span>
+                <span className="contribution-repository-arrow" aria-hidden="true">↗</span>
               </a>
             ))}
           </div>
         ) : (
-          <p>No repository contribution details were returned by GitHub.</p>
+          <div className="contribution-empty">No repository contribution details were returned by GitHub.</div>
         )}
       </article>
 
-      <p className="github-activity-footnote">
+      <p className="github-contributions-footnote">
         Contribution totals are provided by GitHub and may include private contributions. Private repository names are only shown when your connected account has access to them.
       </p>
     </section>
