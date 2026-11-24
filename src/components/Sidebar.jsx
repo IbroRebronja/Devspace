@@ -15,6 +15,7 @@ export default function Sidebar({
     ["▦", "My Projects"],
     ["✓", "My Tasks"],
     ["◷", "Calendar"],
+    ["⌘", "GitHub Activity"],
     ["⚙", "Settings"],
   ];
 
