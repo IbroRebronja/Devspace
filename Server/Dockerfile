@@ -1,4 +1,3 @@
-
 FROM node:24-bookworm-slim
 
 WORKDIR /app
@@ -17,7 +16,7 @@ RUN npm ci
 COPY . .
 
 # Generate Prisma client without requiring the real database credentials
-RUN DATABASE_URL="postgresql://user:password@localhost:5432/devspace?schema=public" npx prisma generate
+RUN DATABASE_URL="postgresql://user:password@localhost:5432/devspace?schema=public" npx prisma generate --config prisma7.config.ts
 
 # Set production environment
 ENV NODE_ENV=production
