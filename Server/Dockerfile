@@ -6,17 +6,16 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependency definitions
+# Copy dependency definitions and Prisma files required by the postinstall script
 COPY package*.json ./
+COPY prisma ./prisma
+COPY prisma7.config.ts ./prisma7.config.ts
 
-# Install dependencies
-RUN npm ci
+# Install dependencies and generate Prisma client without real database credentials
+RUN DATABASE_URL="postgresql://user:password@localhost:5432/devspace?schema=public" npm ci
 
-# Copy backend source files
+# Copy the remaining backend source files
 COPY . .
-
-# Generate Prisma client without requiring the real database credentials
-RUN DATABASE_URL="postgresql://user:password@localhost:5432/devspace?schema=public" npx prisma generate --config prisma7.config.ts
 
 # Set production environment
 ENV NODE_ENV=production
@@ -24,5 +23,5 @@ ENV NODE_ENV=production
 # Backend port
 EXPOSE 5000
 
-# Start the API
+# Start the API, applying pending migrations first
 CMD ["npm", "start"]
