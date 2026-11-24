@@ -202,24 +202,34 @@ router.post("/logout", async (req, res) => {
   const token = req.cookies?.token;
 
   if (token) {
+    let decoded;
+
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      decoded = jwt.verify(token, process.env.JWT_SECRET, {
         algorithms: ["HS256"],
       });
+    } catch {
+      // An invalid or expired token cannot identify an active session.
+    }
 
-      if (
-        typeof decoded.sub === "string" &&
-        typeof decoded.sid === "string"
-      ) {
+    if (
+      typeof decoded?.sub === "string" &&
+      typeof decoded?.sid === "string"
+    ) {
+      try {
         await prisma.session.deleteMany({
           where: {
             id: decoded.sid,
             userId: decoded.sub,
           },
         });
+      } catch (error) {
+        console.error("Session revocation error:", error);
+
+        return res.status(503).json({
+          message: "Could not securely end this session. Please try again.",
+        });
       }
-    } catch (error) {
-      console.error("Session revocation error:", error);
     }
   }
 
