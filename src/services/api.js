@@ -1,4 +1,3 @@
-
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // Shared request function
@@ -88,4 +87,15 @@ export const tasksAPI = {
     request(`/tasks/${id}`, {
       method: "DELETE",
     }),
+};
+
+// GitHub
+export const githubAPI = {
+  connectUrl: `${API_URL}/github/connect`,
+
+  getStatus: () =>
+    request("/github/status"),
+
+  getRepositories: () =>
+    request("/github/repositories"),
 };
