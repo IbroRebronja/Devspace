@@ -3,8 +3,21 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../prisma.js";
 import { authenticateToken } from "../middleware/auth.js";
+import { createAuthRateLimiter } from "../middleware/rateLimit.js";
 
 const router = express.Router();
+
+const loginRateLimit = createAuthRateLimiter({
+  limit: 10,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many login attempts. Please try again later.",
+});
+
+const registrationRateLimit = createAuthRateLimiter({
+  limit: 5,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many registration attempts. Please try again later.",
+});
 
 // A precomputed hash keeps failed logins for unknown emails close in cost
 // to failed logins for existing accounts.
@@ -40,7 +53,7 @@ function publicUser(user) {
 }
 
 // REGISTER
-router.post("/register", async (req, res) => {
+router.post("/register", registrationRateLimit, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -112,7 +125,7 @@ router.post("/register", async (req, res) => {
 });
 
 // LOGIN
-router.post("/login", async (req, res) => {
+router.post("/login", loginRateLimit, async (req, res) => {
   try {
     const { email, password } = req.body;
 
