@@ -1,4 +1,4 @@
- 
+
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -13,20 +13,67 @@ import githubRepositoriesRouter from "./routes/githubRepositories.js";
 
 const app = express();
 
-// Render places one trusted proxy in front of the web service.
-// This makes Express resolve req.ip from the forwarded client address.
-app.set("trust proxy", 1);
-const PORT = process.env.PORT || 5000;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const isProduction = process.env.NODE_ENV === "production";
 
-// Middleware
-app.use(cors({
-  origin: CLIENT_URL,
-  credentials: true,
-}));
+// Render places one trusted proxy in front of the web service.
+app.set("trust proxy", 1);
+
+const PORT = process.env.PORT || 5000;
+const CLIENT_URL =
+  process.env.CLIENT_URL || (isProduction ? null : "http://localhost:5173");
+
+function normalizeOrigin(value) {
+  if (!value) return null;
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+const allowedOrigins = new Set(
+  [
+    normalizeOrigin(CLIENT_URL),
+    ...(isProduction ? [] : ["http://localhost:5173"]),
+  ].filter(Boolean)
+);
+
+// CORS configuration
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      return callback(null, allowedOrigins.has(normalizeOrigin(origin)));
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
+
+// CSRF protection: require an approved browser origin for state changes.
+const safeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
+
+app.use((req, res, next) => {
+  if (safeMethods.has(req.method)) {
+    return next();
+  }
+
+  const requestOrigin = normalizeOrigin(req.get("Origin"));
+
+  if (!requestOrigin || !allowedOrigins.has(requestOrigin)) {
+    return res.status(403).json({
+      message: "Request origin is not allowed.",
+    });
+  }
+
+  return next();
+});
 
 // API routes
 app.use("/api/health", healthRouter);
