@@ -1,196 +1,215 @@
 # DevSpace
 
-A developer dashboard built with React, JavaScript, and CSS. DevSpace provides a workspace for managing projects, tracking tasks, monitoring progress, and keeping track of deadlines.
+A full-stack developer dashboard for managing projects and tasks, tracking deadlines, and viewing GitHub activity and contribution data.
 
 ## Features
 
-- Dashboard overview with live project and task statistics
-- Create, edit, and delete projects
-- Add, edit, delete, and complete tasks
-- Project progress tracking
-- Task overview
-- Calendar page for project deadlines
-- Settings and support pages
-- Responsive sidebar navigation
-- Local storage for saving projects and tasks between sessions
-- Privacy, terms, cookies, and refunds pages
-- Cookie consent interface
+- User registration, login, logout, and individual device sessions
+- Email verification and password reset flows
+- Project creation, editing, and deletion
+- Task creation, editing, completion, and deletion
+- Dashboard overview and project progress
+- Calendar and task views
+- GitHub account connection using OAuth
+- GitHub activity and contribution views
+- Settings, support, and legal pages
+- Protected API routes and per-user data access
 
-## Built With
+## Tech Stack
 
-- React 19
-- JavaScript
-- CSS
-- Vite 6
+**Frontend:** React 19, JavaScript, Vite 6, CSS  
+**Backend:** Node.js, Express 5  
+**Database:** PostgreSQL with Prisma 7  
+**Authentication:** JWT in HttpOnly cookies, bcrypt password hashing, database-backed sessions  
+**Email:** Resend  
+**GitHub integration:** GitHub OAuth and GitHub REST/GraphQL APIs  
+**Deployment:** Vercel (frontend), Render (API), Neon (PostgreSQL)
 
 ## Requirements
 
-Make sure Node.js and npm are installed.
+- Node.js and npm
+- A PostgreSQL database
+- Resend API key for email delivery
+- GitHub OAuth application credentials for GitHub integration
 
-Check your versions:
+## Local Setup
 
-```bash
-node -v
-npm -v
-```
-
-Download Node.js from [nodejs.org](https://nodejs.org/) if needed.
-
-## Installation
-
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/IbroRebronja/Devspace.git
-```
-
-Move into the project folder:
-
-```bash
 cd Devspace
 ```
 
-Install the dependencies:
+### 2. Install frontend dependencies
 
 ```bash
 npm install
 ```
 
-## Run the Project
+### 3. Configure the frontend
 
-Start the development server:
+Create a root-level `.env.local` file:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+### 4. Install backend dependencies
+
+Open a second terminal:
+
+```bash
+cd Server
+npm install
+```
+
+### 5. Configure the backend
+
+Create `Server/.env` with the following variables:
+
+```env
+DATABASE_URL=your_postgresql_connection_string
+JWT_SECRET=your_long_random_secret
+CLIENT_URL=http://localhost:5173
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=DevSpace <onboarding@resend.dev>
+GITHUB_CLIENT_ID=your_github_oauth_client_id
+GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
+GITHUB_CALLBACK_URL=http://localhost:5000/api/github/callback
+GITHUB_TOKEN_ENCRYPTION_KEY=your_64_character_hex_key
+```
+
+Generate secure values for `JWT_SECRET` and `GITHUB_TOKEN_ENCRYPTION_KEY`. The GitHub encryption key must be exactly 64 hexadecimal characters. Keep all secrets private and never commit either environment file.
+
+For local email testing, Resend's `onboarding@resend.dev` sender can only deliver to the email address associated with your Resend account. To send to other users, configure and verify a domain in Resend and update `RESEND_FROM_EMAIL`.
+
+Create a GitHub OAuth App and set its authorization callback URL to the value of `GITHUB_CALLBACK_URL`.
+
+### 6. Start the backend
+
+From the `Server` directory:
 
 ```bash
 npm run dev
 ```
 
-Open the local URL shown in your terminal. By default:
+The backend runs at:
 
 ```text
-http://localhost:5173/
+http://localhost:5000
 ```
 
-## Available Commands
+The development command applies pending Prisma migrations before starting the API.
 
-| Command | Description |
+### 7. Start the frontend
+
+In the root project directory, using the first terminal:
+
+```bash
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+## Useful Commands
+
+Run these from the repository root unless noted otherwise.
+
+| Command | Purpose |
 |---|---|
-| `npm install` | Installs project dependencies |
-| `npm run dev` | Starts the development server |
-| `npm run build` | Creates a production build |
-| `npm run preview` | Previews the production build |
+| `npm install` | Install frontend dependencies |
+| `npm run dev` | Start the Vite development server |
+| `npm run build` | Build the frontend for production |
+| `npm run preview` | Preview the production frontend build |
+| `cd Server && npm install` | Install backend dependencies |
+| `cd Server && npm run dev` | Apply migrations and start the backend in watch mode |
+| `cd Server && npm start` | Apply migrations and start the backend |
+| `cd Server && npx prisma generate --config prisma7.config.ts` | Generate the Prisma Client |
 
-## Project Structure
+## Environment Variables
+
+| Variable | Used by | Description |
+|---|---|---|
+| `VITE_API_URL` | Frontend | API base URL, including `/api` |
+| `DATABASE_URL` | Backend | PostgreSQL connection string |
+| `JWT_SECRET` | Backend | Secret used to sign authentication tokens |
+| `CLIENT_URL` | Backend | Frontend origin used for CORS, redirects, and email links |
+| `RESEND_API_KEY` | Backend | Resend API key |
+| `RESEND_FROM_EMAIL` | Backend | Verified email sender |
+| `GITHUB_CLIENT_ID` | Backend | GitHub OAuth application client ID |
+| `GITHUB_CLIENT_SECRET` | Backend | GitHub OAuth application secret |
+| `GITHUB_CALLBACK_URL` | Backend | GitHub OAuth callback URL |
+| `GITHUB_TOKEN_ENCRYPTION_KEY` | Backend | 32-byte AES-256-GCM key encoded as 64 hexadecimal characters |
+
+## Project Layout
 
 ```text
 Devspace/
-│
+├── Server/
+│   ├── prisma/
+│   │   ├── migrations/
+│   │   └── schema.prisma
+│   ├── src/
+│   │   ├── middleware/
+│   │   ├── routes/
+│   │   ├── utils/
+│   │   ├── index.js
+│   │   └── prisma.js
+│   ├── package.json
+│   └── prisma7.config.ts
 ├── public/
-│
 ├── src/
-│   │
-│   ├── assets/
-│   │   └── images/
-│   │
 │   ├── components/
-│   │   ├── CookieConsent.jsx
-│   │   ├── Header.jsx
-│   │   ├── ProjectCard.jsx
-│   │   ├── ProjectForm.jsx
-│   │   ├── Sidebar.jsx
-│   │   ├── StatCard.jsx
-│   │   └── TaskForm.jsx
-│   │
-│   ├── data/
-│   │   └── projects.js
-│   │
 │   ├── pages/
-│   │   ├── Calendar.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── LegalPage.jsx
-│   │   ├── Projects.jsx
-│   │   ├── Settings.jsx
-│   │   ├── Support.jsx
-│   │   └── Tasks.jsx
-│   │
+│   ├── services/
 │   ├── styles/
-│   │   ├── Dashboard.css
-│   │   ├── LegalPage.css
-│   │   ├── ProjectCard.css
-│   │   ├── Sidebar.css
-│   │   └── WorkspacePages.css
-│   │
 │   ├── App.jsx
-│   ├── index.css
 │   └── main.jsx
-│
-├── .gitignore
-├── index.html
 ├── package.json
-├── package-lock.json
-├── vite.config.js
+├── vercel.json
 └── README.md
 ```
 
-## Folder Guide
+## API Health Check
 
-### `src/components/`
+With the backend running, visit:
 
-Contains reusable interface components.
-
-- `Header.jsx`: Dashboard header.
-- `Sidebar.jsx`: Main navigation.
-- `StatCard.jsx`: Dashboard statistics cards.
-- `ProjectCard.jsx`: Displays individual projects and their tasks.
-- `ProjectForm.jsx`: Form for creating and editing projects.
-- `TaskForm.jsx`: Form for adding and editing tasks.
-- `CookieConsent.jsx`: Cookie consent interface.
-
-### `src/pages/`
-
-Contains the main application pages.
-
-- `Dashboard.jsx`: Main application layout, navigation, project state, and shared functionality.
-- `Projects.jsx`: Project management page.
-- `Tasks.jsx`: Overview of all tasks.
-- `Calendar.jsx`: Project deadlines.
-- `Settings.jsx`: Application settings.
-- `Support.jsx`: Help and support.
-- `LegalPage.jsx`: Privacy, terms, cookies, and refunds information.
-
-### `src/data/`
-
-Contains the initial application data.
-
-- `projects.js`: Initial projects and their tasks.
-
-### `src/styles/`
-
-Contains CSS files for the dashboard, components, navigation, and workspace pages.
-
-## Data Storage
-
-Projects and tasks are currently stored in the browser using `localStorage`.
-
-This means data remains available after refreshing the page in the same browser, but it is not synchronised between different devices or users.
-
-There is currently no backend database or user authentication system.
-
-## Production Build
-
-Create a production build:
-
-```bash
-npm run build
+```text
+http://localhost:5000/api/health
 ```
 
-The generated files are saved in the `dist/` folder.
+A healthy response confirms that the API can connect to PostgreSQL.
 
-Preview the production build locally:
+## Deployment
 
-```bash
-npm run preview
-```
+Current production services:
+
+- **Frontend:** https://devspace-two-xi.vercel.app
+- **API:** https://devspace-api-p1iu.onrender.com
+- **API health:** https://devspace-api-p1iu.onrender.com/api/health
+
+The frontend is deployed on Vercel. The API is deployed on Render and uses PostgreSQL hosted by Neon.
+
+Configure the production environment variables in the respective hosting dashboards. Set `CLIENT_URL` to the deployed frontend URL, `VITE_API_URL` to the production API base URL when building the frontend, and `GITHUB_CALLBACK_URL` to the deployed API's `/api/github/callback` endpoint. Configure the same callback URL in the GitHub OAuth App. Use a verified Resend sending domain for production email delivery.
+
+Prisma migrations are applied by the backend start command. Commit migration files in `Server/prisma/migrations` with schema changes.
+
+## Security Notes
+
+- Do not commit `.env`, `.env.local`, API keys, database URLs, OAuth secrets, or encryption keys.
+- Authentication cookies are HttpOnly and use Secure in production.
+- Passwords are hashed with bcrypt.
+- Sessions are stored individually in the database and can be revoked independently.
+- GitHub OAuth uses state validation and PKCE.
+- GitHub access tokens are encrypted at rest using AES-256-GCM.
+- API state-changing requests require an allowed browser Origin.
+- Authentication and GitHub API routes have rate limits.
 
 ## License
 
-For personal and educational use.
+No open-source license has been specified yet.
