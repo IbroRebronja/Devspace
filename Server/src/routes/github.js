@@ -7,6 +7,7 @@ import {
 
 import prisma from "../prisma.js";
 import { authenticateToken } from "../middleware/auth.js";
+import { githubRateLimit } from "../middleware/githubRateLimit.js";
 import {
   encryptToken,
   decryptToken,
@@ -53,7 +54,7 @@ function githubHeaders(token) {
 }
 
 // Start GitHub authorization
-router.get("/connect", authenticateToken, (req, res) => {
+router.get("/connect", authenticateToken, githubRateLimit, (req, res) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
 
   if (!clientId || !CALLBACK_URL) {
@@ -89,7 +90,7 @@ router.get("/connect", authenticateToken, (req, res) => {
 });
 
 // Handle GitHub authorization callback
-router.get("/callback", authenticateToken, async (req, res) => {
+router.get("/callback", authenticateToken, githubRateLimit, async (req, res) => {
   const { code, state, error } = req.query;
 
   const savedState = req.cookies?.github_oauth_state;
@@ -264,7 +265,7 @@ router.get("/callback", authenticateToken, async (req, res) => {
 });
 
 // Get the connected GitHub account.
-router.get("/status", authenticateToken, async (req, res) => {
+router.get("/status", authenticateToken, githubRateLimit, async (req, res) => {
   try {
     const connection = await prisma.gitHubConnection.findUnique({
       where: {
@@ -292,7 +293,7 @@ router.get("/status", authenticateToken, async (req, res) => {
 });
 
 // List repositories accessible to the connected GitHub account.
-router.get("/repositories", authenticateToken, async (req, res) => {
+router.get("/repositories", authenticateToken, githubRateLimit, async (req, res) => {
   try {
     const connection = await prisma.gitHubConnection.findUnique({
       where: {
