@@ -1,5 +1,9 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+const GITHUB_LOGIN_URL = import.meta.env.PROD
+  ? "https://devspace-api-p1iu.onrender.com/api/auth/github"
+  : `${API_URL}/auth/github`;
+
 // Shared request function
 async function request(endpoint, options = {}) {
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -25,7 +29,7 @@ async function request(endpoint, options = {}) {
 
 // Authentication
 export const authAPI = {
-  githubLoginUrl: `${API_URL}/auth/github`,
+  githubLoginUrl: GITHUB_LOGIN_URL,
   register: (userData) =>
     request("/auth/register", {
       method: "POST",
