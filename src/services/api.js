@@ -25,6 +25,7 @@ async function request(endpoint, options = {}) {
 
 // Authentication
 export const authAPI = {
+  githubLoginUrl: `${API_URL}/auth/github`,
   register: (userData) =>
     request("/auth/register", {
       method: "POST",
