@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import prisma from "../prisma.js";
 import { authenticateToken } from "../middleware/auth.js";
 import { createAuthRateLimiter } from "../middleware/rateLimit.js";
@@ -30,6 +31,12 @@ const verificationRateLimit = createAuthRateLimiter({
   message: "Too many verification requests. Please try again later.",
 });
 
+const githubLoginRateLimit = createAuthRateLimiter({
+  limit: 10,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many GitHub login attempts. Please try again later.",
+});
+
 const recoveryRateLimit = createAuthRateLimiter({
   limit: 5,
   windowMs: 60 * 60 * 1000,
@@ -47,6 +54,137 @@ const cookieOptions = {
   sameSite: "lax",
   path: "/",
 };
+
+const githubLoginCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/api/auth/github",
+  maxAge: 10 * 60 * 1000,
+};
+
+function clearGitHubLoginCookies(res) {
+  res.clearCookie("github_login_state", githubLoginCookieOptions);
+  res.clearCookie("github_login_verifier", githubLoginCookieOptions);
+}
+
+function safeCompareOAuthState(received, expected) {
+  if (typeof received !== "string" || typeof expected !== "string") return false;
+  const a = Buffer.from(received);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+function getGitHubLoginCallbackUrl() {
+  const value = process.env.GITHUB_LOGIN_CALLBACK_URL;
+  if (!value) throw new Error("GITHUB_LOGIN_CALLBACK_URL is not configured.");
+  return value;
+}
+
+async function exchangeGitHubCode(code, verifier) {
+  const clientId = process.env.GITHUB_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error("GitHub OAuth is not configured.");
+
+  const response = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: getGitHubLoginCallbackUrl(),
+      code_verifier: verifier,
+    }),
+    signal: AbortSignal.timeout(10000),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.error || !data.access_token) {
+    throw new Error("GitHub authorization could not be completed.");
+  }
+  return data.access_token;
+}
+
+async function getVerifiedGitHubProfile(accessToken) {
+  const headers = {
+    Accept: "application/vnd.github+json",
+    Authorization: `Bearer ${accessToken}`,
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "DevSpace-Dashboard",
+  };
+  const [profileResponse, emailsResponse] = await Promise.all([
+    fetch("https://api.github.com/user", { headers, signal: AbortSignal.timeout(10000) }),
+    fetch("https://api.github.com/user/emails", { headers, signal: AbortSignal.timeout(10000) }),
+  ]);
+  if (!profileResponse.ok || !emailsResponse.ok) {
+    throw new Error("Could not verify your GitHub account details.");
+  }
+  const [profile, emails] = await Promise.all([profileResponse.json(), emailsResponse.json()]);
+  const primaryEmail = Array.isArray(emails)
+    ? emails.find((item) => item.primary && item.verified && typeof item.email === "string")
+    : null;
+  if (!profile.id || !profile.login || !primaryEmail) {
+    throw new Error("Your GitHub account needs a verified primary email address to sign in.");
+  }
+  return {
+    githubUserId: String(profile.id),
+    githubUsername: profile.login,
+    avatarUrl: profile.avatar_url || null,
+    email: primaryEmail.email.trim().toLowerCase(),
+    name: (typeof profile.name === "string" && profile.name.trim()) || profile.login,
+  };
+}
+
+async function signInWithGitHub(profile, res) {
+  let user = await prisma.user.findUnique({
+    where: { email: profile.email },
+    include: { githubIdentity: true },
+  });
+
+  if (user?.githubIdentity && user.githubIdentity.githubUserId !== profile.githubUserId) {
+    throw new Error("This email is already linked to a different GitHub account.");
+  }
+  if (user && !user.emailVerified) {
+    throw new Error("Verify this email address with your existing sign-in method before linking GitHub.");
+  }
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        name: profile.name.slice(0, 100),
+        email: profile.email,
+        passwordHash: null,
+        emailVerified: true,
+        githubIdentity: {
+          create: {
+            githubUserId: profile.githubUserId,
+            githubUsername: profile.githubUsername,
+            avatarUrl: profile.avatarUrl,
+          },
+        },
+      },
+      include: { githubIdentity: true },
+    });
+  } else if (!user.githubIdentity) {
+    await prisma.githubIdentity.create({
+      data: {
+        userId: user.id,
+        githubUserId: profile.githubUserId,
+        githubUsername: profile.githubUsername,
+        avatarUrl: profile.avatarUrl,
+      },
+    });
+  } else {
+    await prisma.githubIdentity.update({
+      where: { userId: user.id },
+      data: { githubUsername: profile.githubUsername, avatarUrl: profile.avatarUrl },
+    });
+  }
+
+  const session = await createSession(user.id);
+  const token = createToken(user.id, session.id);
+  setSessionCookie(res, token, session.expiresAt);
+}
 
 function createToken(userId, sessionId) {
   return jwt.sign(
@@ -191,6 +329,52 @@ function validEmail(value) {
   return typeof value === "string" &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
+
+// GitHub login: begin OAuth without requiring an existing DevSpace session.
+router.get("/github", githubLoginRateLimit, (req, res) => {
+  try {
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    if (!clientId) throw new Error("GitHub OAuth is not configured.");
+    const state = randomBytes(32).toString("hex");
+    const verifier = randomBytes(32).toString("base64url");
+    const challenge = createHash("sha256").update(verifier).digest("base64url");
+    res.cookie("github_login_state", state, githubLoginCookieOptions);
+    res.cookie("github_login_verifier", verifier, githubLoginCookieOptions);
+    const url = new URL("https://github.com/login/oauth/authorize");
+    url.searchParams.set("client_id", clientId);
+    url.searchParams.set("redirect_uri", getGitHubLoginCallbackUrl());
+    url.searchParams.set("state", state);
+    url.searchParams.set("scope", "read:user user:email");
+    url.searchParams.set("code_challenge", challenge);
+    url.searchParams.set("code_challenge_method", "S256");
+    return res.redirect(url.toString());
+  } catch (error) {
+    console.error("GitHub login start error:", error.message);
+    return res.redirect(`${getClientUrl()}/?githubLogin=error`);
+  }
+});
+
+router.get("/github/callback", githubLoginRateLimit, async (req, res) => {
+  const { code, state, error } = req.query;
+  const savedState = req.cookies?.github_login_state;
+  const verifier = req.cookies?.github_login_verifier;
+  clearGitHubLoginCookies(res);
+
+  if (error || typeof code !== "string" || !safeCompareOAuthState(state, savedState) || !verifier) {
+    return res.redirect(`${getClientUrl()}/?githubLogin=cancelled`);
+  }
+
+  try {
+    const accessToken = await exchangeGitHubCode(code, verifier);
+    const profile = await getVerifiedGitHubProfile(accessToken);
+    await signInWithGitHub(profile, res);
+    return res.redirect(getClientUrl());
+  } catch (error) {
+    console.error("GitHub login callback error:", error.message);
+    const reason = encodeURIComponent(error.message || "GitHub sign-in failed.");
+    return res.redirect(`${getClientUrl()}/?githubLogin=error&reason=${reason}`);
+  }
+});
 
 // REGISTER
 router.post("/register", registrationRateLimit, async (req, res) => {
