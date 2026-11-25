@@ -136,16 +136,42 @@ async function getVerifiedGitHubProfile(accessToken) {
 }
 
 async function signInWithGitHub(profile, res) {
-  let user = await prisma.user.findUnique({
-    where: { email: profile.email },
-    include: { githubIdentity: true },
-  });
+  const relationInclude = { githubIdentity: true, githubConnection: true };
 
-  if (user?.githubIdentity && user.githubIdentity.githubUserId !== profile.githubUserId) {
-    throw new Error("This email is already linked to a different GitHub account.");
+  // Prefer the DevSpace account that already owns this GitHub account.
+  const [identityOwner, connectionOwner] = await Promise.all([
+    prisma.user.findFirst({
+      where: { githubIdentity: { is: { githubUserId: profile.githubUserId } } },
+      include: relationInclude,
+    }),
+    prisma.user.findFirst({
+      where: { githubConnection: { is: { githubUserId: profile.githubUserId } } },
+      include: relationInclude,
+    }),
+  ]);
+
+  if (identityOwner && connectionOwner && identityOwner.id !== connectionOwner.id) {
+    throw new Error("This GitHub account is linked to conflicting DevSpace accounts. Contact support.");
   }
+
+  let user = identityOwner || connectionOwner;
+
+  // Match by verified primary email only if no existing GitHub link was found.
+  if (!user) {
+    user = await prisma.user.findUnique({
+      where: { email: profile.email },
+      include: relationInclude,
+    });
+  }
+
   if (user && !user.emailVerified) {
     throw new Error("Verify this email address with your existing sign-in method before linking GitHub.");
+  }
+  if (user?.githubIdentity && user.githubIdentity.githubUserId !== profile.githubUserId) {
+    throw new Error("This DevSpace account is already linked to a different GitHub account.");
+  }
+  if (user?.githubConnection && user.githubConnection.githubUserId !== profile.githubUserId) {
+    throw new Error("This DevSpace account is already connected to a different GitHub account.");
   }
 
   if (!user) {
@@ -163,7 +189,7 @@ async function signInWithGitHub(profile, res) {
           },
         },
       },
-      include: { githubIdentity: true },
+      include: relationInclude,
     });
   } else {
     await prisma.user.update({
@@ -190,7 +216,6 @@ async function signInWithGitHub(profile, res) {
   const token = createToken(user.id, session.id);
   setSessionCookie(res, token, session.expiresAt);
 }
-
 function createToken(userId, sessionId) {
   return jwt.sign(
     { sub: userId, sid: sessionId },
