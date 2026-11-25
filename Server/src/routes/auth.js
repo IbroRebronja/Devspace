@@ -165,19 +165,24 @@ async function signInWithGitHub(profile, res) {
       },
       include: { githubIdentity: true },
     });
-  } else if (!user.githubIdentity) {
-    await prisma.githubIdentity.create({
-      data: {
-        userId: user.id,
-        githubUserId: profile.githubUserId,
-        githubUsername: profile.githubUsername,
-        avatarUrl: profile.avatarUrl,
-      },
-    });
   } else {
-    await prisma.githubIdentity.update({
-      where: { userId: user.id },
-      data: { githubUsername: profile.githubUsername, avatarUrl: profile.avatarUrl },
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        githubIdentity: {
+          upsert: {
+            create: {
+              githubUserId: profile.githubUserId,
+              githubUsername: profile.githubUsername,
+              avatarUrl: profile.avatarUrl,
+            },
+            update: {
+              githubUsername: profile.githubUsername,
+              avatarUrl: profile.avatarUrl,
+            },
+          },
+        },
+      },
     });
   }
 
@@ -370,7 +375,7 @@ router.get("/github/callback", githubLoginRateLimit, async (req, res) => {
     await signInWithGitHub(profile, res);
     return res.redirect(getClientUrl());
   } catch (error) {
-    console.error("GitHub login callback error:", error.message);
+    console.error("GitHub login callback error:", error);
     const reason = encodeURIComponent(error.message || "GitHub sign-in failed.");
     return res.redirect(`${getClientUrl()}/?githubLogin=error&reason=${reason}`);
   }
