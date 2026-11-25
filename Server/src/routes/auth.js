@@ -82,8 +82,8 @@ function getGitHubLoginCallbackUrl() {
 }
 
 async function exchangeGitHubCode(code, verifier) {
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+  const clientId = process.env.GITHUB_LOGIN_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_LOGIN_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new Error("GitHub OAuth is not configured.");
 
   const response = await fetch("https://github.com/login/oauth/access_token", {
@@ -333,7 +333,7 @@ function validEmail(value) {
 // GitHub login: begin OAuth without requiring an existing DevSpace session.
 router.get("/github", githubLoginRateLimit, (req, res) => {
   try {
-    const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientId = process.env.GITHUB_LOGIN_CLIENT_ID;
     if (!clientId) throw new Error("GitHub OAuth is not configured.");
     const state = randomBytes(32).toString("hex");
     const verifier = randomBytes(32).toString("base64url");
