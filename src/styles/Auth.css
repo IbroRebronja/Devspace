@@ -449,3 +449,50 @@
 .auth-notice .auth-text-button {
   margin-top: 8px;
 }
+
+.auth-github-button {
+  width: 100%;
+  min-height: 46px;
+  margin: 0 0 17px;
+  padding: 11px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-sizing: border-box;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #172033;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.auth-github-button:hover {
+  border-color: #b8c2d0;
+  background: #f8fafc;
+}
+
+.auth-github-button svg {
+  width: 19px;
+  height: 19px;
+}
+
+.auth-divider {
+  margin: 0 0 19px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #98a2b3;
+  font-size: 10px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  height: 1px;
+  flex: 1;
+  background: #e8edf4;
+  content: "";
+}
